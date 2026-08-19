@@ -32,7 +32,7 @@ public final class DomainsConfig {
         builder.push("claim_power");
         CLAIM_POWER_BASE = builder
                 .comment("Claim blocks every owner token (guild or solo player) starts with, before accrual or grants.")
-                .defineInRange("base", 64, 0, Integer.MAX_VALUE);
+                .defineInRange("base", 500, 0, Integer.MAX_VALUE);
         CLAIM_POWER_PER_HOUR = builder.comment(
                 "Claim blocks passively accrued per hour, for every hour at least one member of the owner token is online.")
                 .defineInRange("perHour", 4.0, 0.0, Double.MAX_VALUE);
@@ -44,7 +44,7 @@ public final class DomainsConfig {
         builder.push("chunkload_power");
         CHUNKLOAD_POWER_BASE = builder
                 .comment("Chunkload blocks every owner token starts with, before accrual or grants.")
-                .defineInRange("base", 4, 0, Integer.MAX_VALUE);
+                .defineInRange("base", 100, 0, Integer.MAX_VALUE);
         CHUNKLOAD_POWER_PER_HOUR = builder.comment(
                 "Chunkload blocks passively accrued per hour, for every hour at least one member of the owner token is online.")
                 .defineInRange("perHour", 0.5, 0.0, Double.MAX_VALUE);

@@ -8,6 +8,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.chunkload.ClaimChunkLoader;
 import net.phoenixvine.domains.config.DomainsConfig;
 import net.phoenixvine.domains.data.ChunkKey;
@@ -18,8 +19,13 @@ import net.phoenixvine.domains.data.DomainManager;
 import net.phoenixvine.domains.ownership.ClaimPermissions;
 import net.phoenixvine.domains.ownership.DomainOwnership;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
 
 /**
  * Stable public API for Phoenix Domains — the single entry point for other mods
@@ -30,6 +36,97 @@ import java.util.UUID;
 public final class DomainAPI {
 
     private DomainAPI() {}
+
+    // ── Feature gating ───────────────────────────────────────────────────────
+    // Mirrors SolarisAPI's gating system exactly (feature gates, tiers, per-dimension states) so
+    // an RPG/progression pack can lock claiming/chunkloading/flags behind quests or player level
+    // the same way it already can for Solaris's map features.
+
+    public static final String FEATURE_CLAIMING = "claiming";
+    public static final String FEATURE_CHUNKLOADING = "chunkloading";
+    public static final String FEATURE_CLAIM_FLAGS = "claim_flags";
+
+    private static final Map<String, BooleanSupplier> FEATURE_GATES = new ConcurrentHashMap<>();
+    private static final Map<ResourceLocation, Integer> DIMENSION_TIERS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<ResourceLocation, Integer>> TIER_REQUIREMENTS = new ConcurrentHashMap<>();
+    private static final Map<String, Map<ResourceLocation, DomainFeatureState>> FEATURE_STATES = new ConcurrentHashMap<>();
+
+    private static final Set<String> KNOWN_FEATURE_IDS = ConcurrentHashMap.newKeySet();
+    private static final Set<String> WARNED_UNKNOWN_FEATURE_IDS = ConcurrentHashMap.newKeySet();
+
+    static {
+        KNOWN_FEATURE_IDS.addAll(List.of(FEATURE_CLAIMING, FEATURE_CHUNKLOADING, FEATURE_CLAIM_FLAGS));
+    }
+
+    public static void registerFeatureGate(String featureId, BooleanSupplier check) {
+        KNOWN_FEATURE_IDS.add(featureId);
+        FEATURE_GATES.put(featureId, check);
+    }
+
+    public static void setFeatureEnabled(String featureId, boolean enabled) {
+        registerFeatureGate(featureId, () -> enabled);
+    }
+
+    public static void clearFeatureGate(String featureId) {
+        FEATURE_GATES.remove(featureId);
+    }
+
+    public static void setTier(ResourceLocation dimension, int tier) {
+        DIMENSION_TIERS.put(dimension, tier);
+    }
+
+    public static int getTier(ResourceLocation dimension) {
+        return DIMENSION_TIERS.getOrDefault(dimension, 0);
+    }
+
+    public static void requireTier(String featureId, ResourceLocation dimension, int requiredTier) {
+        KNOWN_FEATURE_IDS.add(featureId);
+        TIER_REQUIREMENTS.computeIfAbsent(featureId, id -> new ConcurrentHashMap<>()).put(dimension, requiredTier);
+    }
+
+    public static void clearTierRequirement(String featureId, ResourceLocation dimension) {
+        Map<ResourceLocation, Integer> perDimension = TIER_REQUIREMENTS.get(featureId);
+        if (perDimension != null) perDimension.remove(dimension);
+    }
+
+    public static boolean isFeatureEnabled(String featureId, ResourceLocation dimension) {
+        warnIfUnknown(featureId);
+        if (!checkGate(featureId)) return false;
+
+        Map<ResourceLocation, Integer> perDimension = TIER_REQUIREMENTS.get(featureId);
+        if (perDimension == null) return true;
+
+        Integer required = perDimension.get(dimension);
+        return required == null || getTier(dimension) >= required;
+    }
+
+    private static boolean checkGate(String featureId) {
+        BooleanSupplier check = FEATURE_GATES.get(featureId);
+        if (check == null) return true;
+        return check.getAsBoolean();
+    }
+
+    private static void warnIfUnknown(String featureId) {
+        if (!KNOWN_FEATURE_IDS.contains(featureId) && WARNED_UNKNOWN_FEATURE_IDS.add(featureId)) {
+            PhoenixDomains.LOGGER.debug(
+                    "Feature id '{}' was queried but has never been gated, tiered, or given an explicit" +
+                            " state — defaulting to enabled. Fine if that's intentional; if not, check for a" +
+                            " typo against whatever was supposed to configure it.",
+                    featureId);
+        }
+    }
+
+    public static void setFeatureState(String featureId, ResourceLocation dimension, DomainFeatureState state) {
+        KNOWN_FEATURE_IDS.add(featureId);
+        FEATURE_STATES.computeIfAbsent(featureId, id -> new ConcurrentHashMap<>()).put(dimension, state);
+    }
+
+    public static DomainFeatureState getFeatureState(String featureId, ResourceLocation dimension) {
+        warnIfUnknown(featureId);
+        Map<ResourceLocation, DomainFeatureState> perDimension = FEATURE_STATES.get(featureId);
+        return perDimension == null ? DomainFeatureState.ENABLED :
+                perDimension.getOrDefault(dimension, DomainFeatureState.ENABLED);
+    }
 
     // ── Query ─────────────────────────────────────────────────────────────────
 
@@ -63,6 +160,8 @@ public final class DomainAPI {
     // translate/display — mirrors GuildManager's promote/demote/ally result style.
 
     public static String claim(ServerPlayer player, ChunkKey key) {
+        if (!isFeatureEnabled(FEATURE_CLAIMING, key.dimension())) return "feature_disabled";
+
         DomainManager manager = manager(player.getServer());
         if (manager.isClaimed(key)) return "already_claimed";
 
@@ -113,6 +212,8 @@ public final class DomainAPI {
         if (claim.isChunkloaded() == chunkloaded) return "no_change";
 
         if (chunkloaded) {
+            if (!isFeatureEnabled(FEATURE_CHUNKLOADING, key.dimension())) return "feature_disabled";
+
             int maxForceloaded = DomainsConfig.MAX_FORCELOADED_CHUNKS_PER_OWNER.get();
             if (maxForceloaded > 0 && manager.getChunkloadedCountForOwner(claim.getOwner()) >= maxForceloaded) {
                 return "too_many_forceloaded";
@@ -133,6 +234,8 @@ public final class DomainAPI {
     }
 
     public static String setFlag(ServerPlayer player, ChunkKey key, ClaimFlag flag, boolean value) {
+        if (!isFeatureEnabled(FEATURE_CLAIM_FLAGS, key.dimension())) return "feature_disabled";
+
         DomainManager manager = manager(player.getServer());
         Optional<Claim> claimOpt = manager.getClaim(key);
         if (claimOpt.isEmpty()) return "not_claimed";

@@ -1,12 +1,15 @@
 {
   "required": true,
   "package": "net.phoenixvine.domains.mixin",
+  "plugin": "net.phoenixvine.domains.mixin.DomainsMixinConfigPlugin",
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
   "mixins": [
     "DummyMixin"
   ],
   "client": [
+    "xaero.DomainXaeroHighlighterRegistryMixin",
+    "xaero.DomainXaeroWorldMapSessionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -5,12 +5,14 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.phoenixvine.domains.chunkload.ClaimChunkLoader;
 import net.phoenixvine.domains.client.PhoenixDomainsClient;
 import net.phoenixvine.domains.config.DomainsClientConfig;
 import net.phoenixvine.domains.config.DomainsConfig;
+import net.phoenixvine.domains.config.DomainsConfigOverrides;
 import net.phoenixvine.domains.integration.chronicles.ChroniclesQuestFlagRegistrar;
 import net.phoenixvine.domains.integration.chronicles.DomainsChroniclesIntegration;
 import net.phoenixvine.domains.network.DomainNetwork;
@@ -31,6 +33,8 @@ public class PhoenixDomains {
         DomainsClientConfig.register();
 
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::onConfigLoad);
+        modEventBus.addListener(this::onConfigReload);
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> PhoenixDomainsClient.init(modEventBus));
     }
@@ -65,5 +69,18 @@ public class PhoenixDomains {
 
             LOGGER.info("Phoenix Domains initializing...");
         });
+    }
+
+    // Re-applies config/phoenix_domains-server-overrides.toml (if present) on top of
+    // whatever the per-world serverconfig produced, every time it (re)loads — see
+    // DomainsConfigOverrides for why this can't be done via a straightforward
+    // ConfigValue#set(...) call. Fires for every mod's configs on this bus, so
+    // DomainsConfigOverrides itself filters to DomainsConfig.SPEC.
+    private void onConfigLoad(final ModConfigEvent.Loading event) {
+        DomainsConfigOverrides.onLoad(event);
+    }
+
+    private void onConfigReload(final ModConfigEvent.Reloading event) {
+        DomainsConfigOverrides.onLoad(event);
     }
 }

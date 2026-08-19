@@ -62,20 +62,20 @@ public class C2SDomainActionPacket {
 
     public C2SDomainActionPacket(FriendlyByteBuf buf) {
         this.action = buf.readEnum(Action.class);
-        this.dimension = buf.readUtf(256);
+        this.dimension = buf.readUtf(DomainNetworkLimits.DIMENSION_MAX);
         this.x = buf.readInt();
         this.z = buf.readInt();
-        this.arg = buf.readUtf(64);
+        this.arg = buf.readUtf(DomainNetworkLimits.ARG_MAX);
         this.boolArg = buf.readBoolean();
         this.radius = buf.readVarInt();
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeEnum(action);
-        buf.writeUtf(dimension, 256);
+        buf.writeUtf(dimension, DomainNetworkLimits.DIMENSION_MAX);
         buf.writeInt(x);
         buf.writeInt(z);
-        buf.writeUtf(arg, 64);
+        buf.writeUtf(arg, DomainNetworkLimits.ARG_MAX);
         buf.writeBoolean(boolArg);
         buf.writeVarInt(radius);
     }
@@ -96,7 +96,15 @@ public class C2SDomainActionPacket {
                 case REQUEST_SYNC -> DomainNetwork.sendSync(player, radius);
             }
 
-            if (action != Action.REQUEST_SYNC) DomainNetwork.sendSync(player, 8);
+            if (action != Action.REQUEST_SYNC) {
+                DomainNetwork.sendSync(player, 8);
+                // The player-centered sync above only ever looks near the player's own physical
+                // position, so an acted-upon chunk far from there (e.g. clicked on a zoomed-out
+                // Xaero/JourneyMap view) would never be included in any sync — send its true state
+                // directly regardless of where the player actually is.
+                ChunkKey acted = key(player);
+                DomainNetwork.sendSyncAt(player, acted.x(), acted.z(), 1);
+            }
         });
         ctx.get().setPacketHandled(true);
     }

@@ -16,14 +16,24 @@ public class S2CDomainSyncPacket {
     public record ClaimEntry(int x, int z, String ownerName, int color, boolean chunkloaded) {}
 
     private final List<ClaimEntry> claims;
+    // The square region (centerX/centerZ +/- radius) this sync actually covers — ClientDomainCache
+    // needs this to merge by-region (clear then repopulate only this square) instead of fully
+    // replacing its whole known claim set on every sync, see its own doc for why.
+    private final int centerX;
+    private final int centerZ;
+    private final int radius;
     private final long availableClaimBlocks;
     private final long usedClaimBlocks;
     private final long availableChunkloadBlocks;
     private final long usedChunkloadBlocks;
 
-    public S2CDomainSyncPacket(List<ClaimEntry> claims, long availableClaimBlocks, long usedClaimBlocks,
-                               long availableChunkloadBlocks, long usedChunkloadBlocks) {
+    public S2CDomainSyncPacket(List<ClaimEntry> claims, int centerX, int centerZ, int radius,
+                               long availableClaimBlocks, long usedClaimBlocks, long availableChunkloadBlocks,
+                               long usedChunkloadBlocks) {
         this.claims = claims;
+        this.centerX = centerX;
+        this.centerZ = centerZ;
+        this.radius = radius;
         this.availableClaimBlocks = availableClaimBlocks;
         this.usedClaimBlocks = usedClaimBlocks;
         this.availableChunkloadBlocks = availableChunkloadBlocks;
@@ -34,10 +44,13 @@ public class S2CDomainSyncPacket {
         int n = buf.readVarInt();
         List<ClaimEntry> list = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
-            list.add(new ClaimEntry(buf.readVarInt(), buf.readVarInt(), buf.readUtf(64), buf.readInt(),
-                    buf.readBoolean()));
+            list.add(new ClaimEntry(buf.readVarInt(), buf.readVarInt(),
+                    buf.readUtf(DomainNetworkLimits.OWNER_NAME_MAX), buf.readInt(), buf.readBoolean()));
         }
         this.claims = list;
+        this.centerX = buf.readVarInt();
+        this.centerZ = buf.readVarInt();
+        this.radius = buf.readVarInt();
         this.availableClaimBlocks = buf.readLong();
         this.usedClaimBlocks = buf.readLong();
         this.availableChunkloadBlocks = buf.readLong();
@@ -49,10 +62,13 @@ public class S2CDomainSyncPacket {
         for (ClaimEntry c : claims) {
             buf.writeVarInt(c.x());
             buf.writeVarInt(c.z());
-            buf.writeUtf(c.ownerName(), 64);
+            buf.writeUtf(c.ownerName(), DomainNetworkLimits.OWNER_NAME_MAX);
             buf.writeInt(c.color());
             buf.writeBoolean(c.chunkloaded());
         }
+        buf.writeVarInt(centerX);
+        buf.writeVarInt(centerZ);
+        buf.writeVarInt(radius);
         buf.writeLong(availableClaimBlocks);
         buf.writeLong(usedClaimBlocks);
         buf.writeLong(availableChunkloadBlocks);
@@ -66,7 +82,7 @@ public class S2CDomainSyncPacket {
 
     private static void applyOnClient(S2CDomainSyncPacket pkt) {
         if (Minecraft.getInstance().player == null) return;
-        ClientDomainCache.update(pkt.claims, pkt.availableClaimBlocks, pkt.usedClaimBlocks,
-                pkt.availableChunkloadBlocks, pkt.usedChunkloadBlocks);
+        ClientDomainCache.update(pkt.claims, pkt.centerX, pkt.centerZ, pkt.radius, pkt.availableClaimBlocks,
+                pkt.usedClaimBlocks, pkt.availableChunkloadBlocks, pkt.usedChunkloadBlocks);
     }
 }

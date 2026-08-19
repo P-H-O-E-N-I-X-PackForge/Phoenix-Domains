@@ -5,6 +5,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.phoenixvine.domains.PhoenixDomains;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +24,9 @@ import java.util.UUID;
 public class DomainManager extends SavedData {
 
     private static final String SAVE_KEY = "phoenix_domains";
+    // See GuildManager's own DATA_VERSION doc — same scaffolding-for-future-migrations purpose,
+    // same "no migration needed yet, this is just the hook" status.
+    private static final int DATA_VERSION = 1;
 
     private final Map<ChunkKey, Claim> claims = new LinkedHashMap<>();
     private final Map<UUID, Set<ChunkKey>> claimsByOwner = new HashMap<>();
@@ -36,18 +40,29 @@ public class DomainManager extends SavedData {
 
     private static DomainManager load(CompoundTag tag) {
         DomainManager mgr = new DomainManager();
+        int version = tag.contains("dataVersion") ? tag.getInt("dataVersion") : 0;
 
         ListTag claimList = tag.getList("claims", Tag.TAG_COMPOUND);
         for (int i = 0; i < claimList.size(); i++) {
-            Claim claim = Claim.deserialize(claimList.getCompound(i));
-            mgr.claims.put(claim.getKey(), claim);
-            mgr.claimsByOwner.computeIfAbsent(claim.getOwner(), k -> new HashSet<>()).add(claim.getKey());
+            // A single malformed claim compound must not take down every other claim's data.
+            try {
+                Claim claim = Claim.deserialize(claimList.getCompound(i));
+                mgr.claims.put(claim.getKey(), claim);
+                mgr.claimsByOwner.computeIfAbsent(claim.getOwner(), k -> new HashSet<>()).add(claim.getKey());
+            } catch (Exception e) {
+                PhoenixDomains.LOGGER.error("Skipping corrupt claim entry {} in save data: {}", i,
+                        claimList.getCompound(i), e);
+            }
         }
 
         ListTag powerList = tag.getList("powers", Tag.TAG_COMPOUND);
         for (int i = 0; i < powerList.size(); i++) {
             CompoundTag p = powerList.getCompound(i);
-            mgr.powers.put(p.getUUID("owner"), ClaimPower.deserialize(p));
+            try {
+                mgr.powers.put(p.getUUID("owner"), ClaimPower.deserialize(p));
+            } catch (Exception e) {
+                PhoenixDomains.LOGGER.error("Skipping corrupt claim-power entry {} in save data: {}", i, p, e);
+            }
         }
 
         return mgr;
@@ -55,6 +70,7 @@ public class DomainManager extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag) {
+        tag.putInt("dataVersion", DATA_VERSION);
         ListTag claimList = new ListTag();
         for (Claim claim : claims.values()) claimList.add(claim.serialize());
         tag.put("claims", claimList);

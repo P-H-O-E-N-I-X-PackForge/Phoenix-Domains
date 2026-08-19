@@ -39,7 +39,25 @@ Phoenix Domains — chunk claiming and land protection for guilds and solo playe
         ordering = "AFTER"
         side = "BOTH"
     [[dependencies.${mod_id}]]
-        modId = "phoenix_solaris"
+        modId = "solaris"
+        mandatory = false
+        versionRange = "[0.1.0,)"
+        ordering = "AFTER"
+        side = "CLIENT"
+    [[dependencies.${mod_id}]]
+        modId = "journeymap"
+        mandatory = false
+        versionRange = "[0.1.0,)"
+        ordering = "AFTER"
+        side = "CLIENT"
+    [[dependencies.${mod_id}]]
+        modId = "xaerominimap"
+        mandatory = false
+        versionRange = "[0.1.0,)"
+        ordering = "AFTER"
+        side = "CLIENT"
+    [[dependencies.${mod_id}]]
+        modId = "xaeroworldmap"
         mandatory = false
         versionRange = "[0.1.0,)"
         ordering = "AFTER"

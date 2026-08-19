@@ -3,63 +3,123 @@ package net.phoenixvine.domains.integration.solaris;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.ModList;
-import net.phoenixvine.solaris.api.SolarisFeatureState;
 
 /**
  * Optional integration with Solaris. {@code phoenix_solaris} is declared as a
  * non-mandatory, client-only {@code mods.toml} dependency, so nothing in this class
- * may be touched unless {@link #isAvailable()} is true first — and that check, plus
- * every call into this class, must happen from code that already only ever runs on
- * the physical client (never from a class Forge loads on a dedicated server), or the
- * JVM will try to resolve Solaris's classes and crash on a server that doesn't have
- * it installed. Mirrors {@code DomainsChroniclesIntegration} /
- * {@code net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat}.
+ * may be touched unless {@link #isAvailable()} is true first.
  *
- * Registers a claim-tint overlay on Solaris's own terrain map (so claims show up there
- * too), and hands out {@link SolarisClaimMapScreen} — a Domains-specific screen that
- * reuses Solaris's real terrain rendering with a chunk grid and claim interactions laid
- * over it, in place of Domains' own vanilla-only fallback ({@code ClaimMapScreen}).
+ * This class uses a nested lazy-loaded helper class ({@link Impl}) to prevent
+ * the JVM from attempting to resolve Solaris classes when the mod is missing.
  */
 public final class DomainsSolarisIntegration {
 
-    public static final String SOLARIS_MOD_ID = "phoenix_solaris";
-
-    /**
-     * Feature id this mod registers under Solaris's generic per-player/team tri-state system
-     * ({@code SolarisFeatureState}) — {@code DISABLED} hides the claim-map keybind's screen
-     * entirely, {@code VISIBLE} allows browsing but refuses claim/unclaim/chunkload clicks
-     * client-side, {@code ENABLED} allows full management. Rides entirely on Solaris's own
-     * team-shared persistence/sync; Domains stores no state of its own for this.
-     */
+    public static final String SOLARIS_MOD_ID = "solaris";
     public static final String FEATURE_CLAIM_MAP = "domains_claim_map";
 
     private static boolean registered = false;
 
     private DomainsSolarisIntegration() {}
 
+    /**
+     * Safe to call anywhere. Does not trigger loading of any Solaris classes.
+     */
     public static boolean isAvailable() {
         return ModList.get().isLoaded(SOLARIS_MOD_ID);
     }
 
     /** Call only after {@link #isAvailable()} has returned true. Idempotent. */
     public static void init() {
+        if (!isAvailable()) return;
         if (registered) return;
         registered = true;
-        net.phoenixvine.solaris.api.SolarisAPI.registerOverlay(new DomainClaimOverlay());
+        Impl.init();
     }
 
     /** Call only after {@link #isAvailable()} has returned true. */
     public static void requestRefresh() {
-        net.phoenixvine.solaris.api.SolarisAPI.requestRefresh();
+        if (isAvailable()) {
+            Impl.requestRefresh();
+        }
     }
 
-    /** Call only after {@link #isAvailable()} has returned true. */
+    /**
+     * Call only after {@link #isAvailable()} has returned true. Equivalent to
+     * {@link #openClaimMapScreen(Screen)} with {@code null} — i.e. nothing to return to.
+     */
     public static Screen openClaimMapScreen() {
-        return new SolarisClaimMapScreen();
+        return openClaimMapScreen(null);
     }
 
-    /** Call only after {@link #isAvailable()} has returned true. */
-    public static SolarisFeatureState claimMapState(ResourceLocation dimension) {
-        return net.phoenixvine.solaris.api.SolarisAPI.getFeatureState(FEATURE_CLAIM_MAP, dimension);
+    /**
+     * Call only after {@link #isAvailable()} has returned true. {@code returnTo} is threaded
+     * through to the resulting {@link SolarisClaimMapScreen} so it can hand the player back to
+     * {@code returnTo} on close instead of dropping to the world.
+     */
+    public static Screen openClaimMapScreen(Screen returnTo) {
+        if (!isAvailable()) {
+            throw new IllegalStateException("Cannot open Solaris map: Solaris is not installed!");
+        }
+        return Impl.openClaimMapScreen(returnTo);
+    }
+
+    /**
+     * Safely retrieves the feature state mapped to a local enum.
+     * Safe to call even if Solaris is not installed (returns {@link FeatureState#DISABLED}).
+     */
+    public static FeatureState claimMapState(ResourceLocation dimension) {
+        if (!isAvailable()) {
+            return FeatureState.DISABLED;
+        }
+        return Impl.claimMapState(dimension);
+    }
+
+    /**
+     * A safe local enum mirror of Solaris's state system so calling classes
+     * don't have to import or load Solaris classes.
+     */
+    public enum FeatureState {
+
+        DISABLED,
+        VISIBLE,
+        ENABLED;
+
+        public boolean atLeast(FeatureState other) {
+            return this.ordinal() >= other.ordinal();
+        }
+    }
+
+    /**
+     * Nested implementation helper. The JVM will only load this class and resolve
+     * its Solaris-specific imports/types if it is explicitly executed.
+     */
+    private static class Impl {
+
+        private static void init() {
+            net.phoenixvine.solaris.api.SolarisAPI.registerOverlay(new DomainClaimOverlay());
+        }
+
+        private static void requestRefresh() {
+            net.phoenixvine.solaris.api.SolarisAPI.requestRefresh();
+        }
+
+        private static Screen openClaimMapScreen(Screen returnTo) {
+            return new SolarisClaimMapScreen(returnTo);
+        }
+
+        private static FeatureState claimMapState(ResourceLocation dimension) {
+            net.phoenixvine.solaris.api.SolarisFeatureState state = net.phoenixvine.solaris.api.SolarisAPI
+                    .getFeatureState(FEATURE_CLAIM_MAP, dimension);
+
+            if (state == null) return FeatureState.DISABLED;
+            switch (state) {
+                case ENABLED:
+                    return FeatureState.ENABLED;
+                case VISIBLE:
+                    return FeatureState.VISIBLE;
+                default:
+                    return FeatureState.DISABLED;
+            }
+        }
     }
 }

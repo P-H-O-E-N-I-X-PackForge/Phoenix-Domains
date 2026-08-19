@@ -29,17 +29,32 @@ public final class ClientDomainCache {
     // packed chunk coords instead, so lookups are O(1) regardless of how many claims exist.
     private static Map<Long, S2CDomainSyncPacket.ClaimEntry> byChunk = Map.of();
 
-    public static void update(List<S2CDomainSyncPacket.ClaimEntry> claimList, long availClaim, long usedClaim,
-                              long availChunkload, long usedChunkload) {
-        claims = claimList;
+    /**
+     * Merges a sync by-region: a sync packet only ever describes claims within the square
+     * {@code centerX/centerZ +/- radius} it was gathered for on the server, so this clears just
+     * that square from the cache before repopulating it from {@code claimList} — any chunk in the
+     * square absent from the list is now known-unclaimed, but chunks outside the square (from
+     * earlier syncs covering other areas) are left untouched. A plain full-replace here used to
+     * silently erase every claim the client knew about outside whatever the latest sync happened
+     * to cover, which is why far-away claim/unclaim actions (e.g. from a zoomed-out map click)
+     * never visibly took effect.
+     */
+    public static void update(List<S2CDomainSyncPacket.ClaimEntry> claimList, int centerX, int centerZ, int radius,
+                              long availClaim, long usedClaim, long availChunkload, long usedChunkload) {
         availableClaimBlocks = availClaim;
         usedClaimBlocks = usedClaim;
         availableChunkloadBlocks = availChunkload;
         usedChunkloadBlocks = usedChunkload;
 
-        Map<Long, S2CDomainSyncPacket.ClaimEntry> index = new HashMap<>(claimList.size() * 2);
-        for (S2CDomainSyncPacket.ClaimEntry c : claimList) index.put(packKey(c.x(), c.z()), c);
-        byChunk = index;
+        Map<Long, S2CDomainSyncPacket.ClaimEntry> merged = new HashMap<>(byChunk);
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                merged.remove(packKey(centerX + dx, centerZ + dz));
+            }
+        }
+        for (S2CDomainSyncPacket.ClaimEntry c : claimList) merged.put(packKey(c.x(), c.z()), c);
+        byChunk = merged;
+        claims = List.copyOf(merged.values());
 
         version++;
     }

@@ -46,6 +46,20 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven { // JourneyMap integration
+        name = 'JourneyMap Maven'
+        url = 'https://jm.gserv.me/repository/maven-public/'
+        content {
+            includeGroup 'info.journeymap'
+        }
+    }
+    maven { // Xaero's Minimap/World Map integration
+        name = "Xaero's Maven"
+        url = 'https://chocolateminecraft.com/maven/'
+        content {
+            includeGroupAndSubgroups 'xaero'
+        }
+    }
     flatDir {
         dir 'libs'
     }
@@ -54,6 +68,15 @@ repositories {
         content {
 // need to be specific here due to version overlaps
             includeGroup("com.tterrag.registrate")
+        }
+    }
+    maven {
+        // KubeJS — optional scripting integration only, see integration.kubejs. Mirrors the same
+        // coordinates/version already verified working in Solaris and PhoenixChronicles.
+        name = 'LatvianModder'
+        url = 'https://maven.latvian.dev/releases'
+        content {
+            includeGroup 'dev.latvian.mods'
         }
     }
 }
@@ -97,6 +120,14 @@ legacyForge {
             systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
             programArguments.addAll('--nogui', '--world', 'world-extra')
         }
+        gameTestServer {
+            // RunModel has no gameTestServer() convenience method (only client()/clientData()/
+            // data()/server()/serverData()) - the run type still exists in Forge's userdev
+            // template though, so it's set directly via the underlying `type` property.
+            type = 'gameTestServer'
+            sourceSet = sourceSets.main
+            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+        }
         data {
             data()
             sourceSet = sourceSets.main
@@ -128,35 +159,80 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
+
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixinextras_version}"))
+    jarJar(api("io.github.llamalad7:mixinextras-forge:${mixinextras_version}")).version {
+        require("[${mixinextras_version},)")
+    }
+
     modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
 
-    modImplementation 'local:phoenix_guilds:0.1.0'
+    modImplementation 'curse.maven:phoenix-guilds-1612085:8460956'
 
-    modCompileOnly 'local:phoenix_chronicles:0.1.0'
+    modCompileOnly 'curse.maven:phoenix-chronicles-quests-1614113:8465025'
 
-    modCompileOnly 'local:phoenix_solaris:0.1.0'
+    modCompileOnly 'curse.maven:solaris-map-1622856:8499232'
 
-    modRuntimeOnly 'local:phoenix_guilds:0.1.0'
+    modRuntimeOnly 'curse.maven:phoenix-guilds-1612085:8460956'
 
     modRuntimeOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
 
-    modRuntimeOnly 'local:phoenix_chronicles:0.1.0'
+    modRuntimeOnly 'curse.maven:phoenix-chronicles-quests-1614113:8465025'
 
-    modRuntimeOnly 'local:phoenix_solaris:0.1.0'
+    modRuntimeOnly 'curse.maven:solaris-map-1622856:8499232'
+
+    
+    modCompileOnly("info.journeymap:journeymap-api:${journeymap_api_version}")
+    modCompileOnly("curse.maven:journeymap-32274:${journeymap_curse_file}")
+   //modRuntimeOnly("curse.maven:journeymap-32274:${journeymap_curse_file}")
+
+    modCompileOnly("xaero.lib:xaerolib-forge-${minecraft_version}:${xaeroslib_version}")
+    modCompileOnly("xaero.map:xaeroworldmap-forge-${minecraft_version}:${xaerosworldmap_version}")
+    modCompileOnly("xaero.minimap:xaerominimap-forge-${minecraft_version}:${xaerosminimap_version}")
+  //  modRuntimeOnly("xaero.lib:xaerolib-forge-${minecraft_version}:${xaeroslib_version}")
+  //  modRuntimeOnly("xaero.map:xaeroworldmap-forge-${minecraft_version}:${xaerosworldmap_version}")
+    //modRuntimeOnly("xaero.minimap:xaerominimap-forge-${minecraft_version}:${xaerosminimap_version}")
 
     modRuntimeOnly("com.tterrag.registrate:Registrate:${registrate_version}")
 
     modRuntimeOnly("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
 
+    // KubeJS — compile-time only: the plugin class (see integration.kubejs) is only ever
+    // instantiated by KubeJS itself (via kubejs.plugins.txt), and only if KubeJS is actually
+    // installed, so Domains works fine without it at runtime. Not added as modRuntimeOnly since
+    // packs that DO run KubeJS already provide it themselves — bundling/requiring our own copy
+    // would just be redundant and risks a version clash with whatever the pack ships.
+    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 
-
+    // Phoenix Wiki - jar-in-jar'd shared theme system (net.phoenixvine.wiki.theme.PhoenixTheme)
+    // and markdown/wiki engine (net.phoenixvine.wiki.PhoenixWikiAPI) - the same theme choice this
+    // library holds is shared with every other Phoenixvine mod that also embeds it. After changing
+    // anything in that project, run `./gradlew publishToDomains` there to refresh libs/phoenix_wiki-*.jar.
+    jarJar(modImplementation("local:phoenix_wiki:0.1.0"))
 
 
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+sourceSets {
+    test {
+        // Pulls in the same Minecraft/Forge classpath main compiles against, so pure-logic
+        // classes that merely reference simple data types (ChunkKey, CompoundTag, UUID) can be
+        // unit tested without a running game or registry bootstrap - anything that actually
+        // needs live registries/rendering stays untested.
+        compileClasspath += sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.runtimeClasspath
+    }
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
 
 
 tasks.named('processResources', ProcessResources).configure {
