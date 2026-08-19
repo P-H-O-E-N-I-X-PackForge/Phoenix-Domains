@@ -171,7 +171,7 @@ dependencies {
 
     modCompileOnly 'curse.maven:phoenix-chronicles-quests-1614113:8465025'
 
-    modCompileOnly 'curse.maven:solaris-map-1622856:8499232'
+    modCompileOnly project(':Solaris')
 
     modRuntimeOnly 'curse.maven:phoenix-guilds-1612085:8460956'
 
@@ -179,7 +179,7 @@ dependencies {
 
     modRuntimeOnly 'curse.maven:phoenix-chronicles-quests-1614113:8465025'
 
-    modRuntimeOnly 'curse.maven:solaris-map-1622856:8499232'
+    modRuntimeOnly project(':Solaris')
 
     
     modCompileOnly("info.journeymap:journeymap-api:${journeymap_api_version}")

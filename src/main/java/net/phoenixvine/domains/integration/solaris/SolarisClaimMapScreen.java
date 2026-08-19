@@ -153,13 +153,7 @@ public class SolarisClaimMapScreen extends Screen {
     /**
      * Tiles sourced directly from {@link MapTileCache}, independent of player/camera position —
      * same approach and same tile-boundary-alignment math as {@code SolarisMapScreen}'s own
-     * {@code renderFlatMapTiles}.
-     * <p>
-     * BLOCKED: LOD implementation waiting on published Solaris update.
-     * Solaris now supports 4-arg TileKey(dimension, tileX, tileZ, lod) to enable aggressive LOD
-     * at high zoom. Once published: calculate lod = lodForZoom(viewport.getZoom()), scale
-     * chunksPerTile and tileWorldSize by (1 << lod), and pass lod to TileKey. This will reduce
-     * lag at zoom > 300+ by rendering coarser detail tiles instead of full-resolution.
+     * {@code renderFlatMapTiles}. Uses LOD-based rendering for performance at any zoom level.
      */
     private void renderTiles(GuiGraphics g) {
         Minecraft mc = Minecraft.getInstance();
@@ -171,28 +165,36 @@ public class SolarisClaimMapScreen extends Screen {
         double worldMinZ = viewport.toWorldZ(frameY, 0);
         double worldMaxZ = viewport.toWorldZ(frameY + frameH, 0);
 
-        int tileMinX = Math.floorDiv((int) Math.floor(worldMinX) >> 4, MapTileCache.TILE_CHUNKS);
-        int tileMaxX = Math.floorDiv((int) Math.floor(worldMaxX) >> 4, MapTileCache.TILE_CHUNKS);
-        int tileMinZ = Math.floorDiv((int) Math.floor(worldMinZ) >> 4, MapTileCache.TILE_CHUNKS);
-        int tileMaxZ = Math.floorDiv((int) Math.floor(worldMaxZ) >> 4, MapTileCache.TILE_CHUNKS);
+        float zoom = viewport.getZoom();
+        int lod = Math.max(0, (int) Math.ceil(-Math.log(zoom) / Math.log(2) - 1.32));
+        if (zoom > 300) lod = Math.max(lod, 2);
+        if (zoom > 500) lod = Math.max(lod, 3);
+        if (zoom > 1000) lod = Math.max(lod, 4);
+        lod = Math.min(14, lod);
+
+        int chunksPerTile = MapTileCache.TILE_CHUNKS << lod;
+        int tileWorldSize = (MapTileCache.TILE_CHUNKS * 16) << lod;
+
+        int tileMinX = Math.floorDiv((int) Math.floor(worldMinX) >> 4, chunksPerTile);
+        int tileMaxX = Math.floorDiv((int) Math.floor(worldMaxX) >> 4, chunksPerTile);
+        int tileMinZ = Math.floorDiv((int) Math.floor(worldMinZ) >> 4, chunksPerTile);
+        int tileMaxZ = Math.floorDiv((int) Math.floor(worldMaxZ) >> 4, chunksPerTile);
 
         for (int tz = tileMinZ; tz <= tileMaxZ; tz++) {
             for (int tx = tileMinX; tx <= tileMaxX; tx++) {
-                MapTileCache.TileKey key = new MapTileCache.TileKey(dimension, tx, tz);
+                MapTileCache.TileKey key = new MapTileCache.TileKey(dimension, tx, tz, lod);
                 MapTileCache.MapTile tile = MapTileCache.getOrBuildTile(key);
                 // null means the persisted store isn't finished loading yet — skip drawing this
                 // tile for now rather than building it with an incomplete picture; it'll be ready
                 // within a frame or two once the (async, one-time-per-dimension) load completes.
                 if (tile == null) continue;
 
-                int tileWorldX = tx * MapTileCache.TILE_CHUNKS * 16;
-                int tileWorldZ = tz * MapTileCache.TILE_CHUNKS * 16;
+                int tileWorldX = tx * tileWorldSize;
+                int tileWorldZ = tz * tileWorldSize;
                 int destX = (int) Math.round(viewport.toScreenX(tileWorldX, 0));
                 int destY = (int) Math.round(viewport.toScreenY(tileWorldZ, 0));
-                int destSizeX = (int) Math.round(viewport.toScreenX(tileWorldX + MapTileCache.TILE_PIXELS, 0)) -
-                        destX;
-                int destSizeZ = (int) Math.round(viewport.toScreenY(tileWorldZ + MapTileCache.TILE_PIXELS, 0)) -
-                        destY;
+                int destSizeX = (int) Math.round(viewport.toScreenX(tileWorldX + tileWorldSize, 0)) - destX;
+                int destSizeZ = (int) Math.round(viewport.toScreenY(tileWorldZ + tileWorldSize, 0)) - destY;
 
                 g.blit(tile.textureId(), destX, destY, destSizeX, destSizeZ, 0, 0, MapTileCache.TILE_PIXELS,
                         MapTileCache.TILE_PIXELS, MapTileCache.TILE_PIXELS, MapTileCache.TILE_PIXELS);
