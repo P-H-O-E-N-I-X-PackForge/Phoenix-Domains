@@ -155,10 +155,11 @@ public class SolarisClaimMapScreen extends Screen {
      * same approach and same tile-boundary-alignment math as {@code SolarisMapScreen}'s own
      * {@code renderFlatMapTiles}.
      * <p>
-     * TODO (performance): Once Solaris includes the 4-arg TileKey(dimension, tileX, tileZ, lod)
-     * constructor, update this to use LOD based on viewport zoom. This would reduce tile count
-     * at low zoom like SolarisMapScreen does: calculate lod from zoom, scale chunksPerTile and
-     * tileWorldSize by (1 << lod), and pass the lod to TileKey. Currently always uses LOD 0.
+     * BLOCKED: LOD implementation waiting on published Solaris update.
+     * Solaris now supports 4-arg TileKey(dimension, tileX, tileZ, lod) to enable aggressive LOD
+     * at high zoom. Once published: calculate lod = lodForZoom(viewport.getZoom()), scale
+     * chunksPerTile and tileWorldSize by (1 << lod), and pass lod to TileKey. This will reduce
+     * lag at zoom > 300+ by rendering coarser detail tiles instead of full-resolution.
      */
     private void renderTiles(GuiGraphics g) {
         Minecraft mc = Minecraft.getInstance();
