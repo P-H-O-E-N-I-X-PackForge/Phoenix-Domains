@@ -202,8 +202,16 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
-    /** Chunk boundary lines derived from world chunk coordinates, not a fixed texture window. */
+    /**
+     * Chunk boundary lines derived from world chunk coordinates, not a fixed texture window.
+     * Skipped at low zoom (matches {@code SolarisMapScreen.drawChunkGridWorld}'s own threshold):
+     * once each chunk is only a couple screen pixels wide, the grid degenerates into solid noise
+     * instead of useful boundary lines, and drawing a line per chunk across the whole visible
+     * world gets expensive for no visual benefit.
+     */
     private void drawChunkGrid(GuiGraphics g) {
+        if (viewport.getZoom() < 0.4f) return;
+
         int gridColor = 0x22FFFFFF;
 
         int chunkMinX = (int) Math.floor(viewport.toWorldX(frameX, 0)) >> 4;
@@ -223,12 +231,20 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
+    /**
+     * Uses the exact same per-edge {@code toScreenX/toScreenY} truncation as {@link #drawChunkGrid}
+     * for both edges of the box, instead of deriving a width from {@code 16 * zoom} — the two
+     * roundings don't agree (the "16 * zoom" edge drifts from the grid's independently-truncated
+     * line position as zoom changes), which is what made the hover highlight visibly misaligned
+     * from the grid lines it's supposed to be tracing.
+     */
     private void highlightChunk(GuiGraphics g, int cx, int cz, int outlineColor) {
         int x0 = (int) viewport.toScreenX(cx << 4, 0);
         int y0 = (int) viewport.toScreenY(cz << 4, 0);
-        int s = (int) (16 * viewport.getZoom());
-        if (x0 + s < frameX || x0 > frameX + frameW || y0 + s < frameY || y0 > frameY + frameH) return;
-        g.renderOutline(x0, y0, s, s, outlineColor);
+        int x1 = (int) viewport.toScreenX((cx + 1) << 4, 0);
+        int y1 = (int) viewport.toScreenY((cz + 1) << 4, 0);
+        if (x1 < frameX || x0 > frameX + frameW || y1 < frameY || y0 > frameY + frameH) return;
+        g.renderOutline(x0, y0, x1 - x0, y1 - y0, outlineColor);
     }
 
     private void renderSidebar(GuiGraphics g, int[] hovered, S2CDomainSyncPacket.ClaimEntry hoveredEntry) {
