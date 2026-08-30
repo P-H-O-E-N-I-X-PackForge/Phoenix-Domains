@@ -46,26 +46,11 @@ public class DomainNetwork {
                 java.util.Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
-    /** Gathers claims within {@code radius} chunks of the player and pushes them, plus the player's power pools. */
     public static void sendSync(ServerPlayer player, int radius) {
         BlockPos playerPos = player.blockPosition();
         sendSyncAt(player, playerPos.getX() >> 4, playerPos.getZ() >> 4, radius);
     }
 
-    /**
-     * Same as {@link #sendSync(ServerPlayer, int)}, but centered on an explicit chunk rather than
-     * the player's own position. {@code ClientDomainCache#update} merges each incoming sync
-     * by-region (clearing then repopulating only the {@code centerX/centerZ/radius} square this
-     * packet actually covers, leaving everything else the client already knew about untouched) —
-     * see its own doc for why a plain full-replace used to silently erase any claim knowledge
-     * outside whatever the most recent sync happened to cover. That fix alone doesn't help if the
-     * relevant chunk is never queried at all, though: the periodic player-centered sync ({@link
-     * #sendSync(ServerPlayer, int)}) only ever looks near the player's own physical position, so a
-     * chunk claimed/unclaimed far from there (e.g. clicked on a zoomed-out Xaero/JourneyMap view)
-     * would never be included in any sync, ever — {@code C2SDomainActionPacket} calls this
-     * directly, centered on the specific chunk just acted on, alongside the normal player-centered
-     * sync, so that chunk's true state reaches the client regardless of the player's own location.
-     */
     public static void sendSyncAt(ServerPlayer player, int centerX, int centerZ, int radius) {
         int clamped = Math.max(0, Math.min(radius, 32));
         DomainManager manager = DomainManager.get(player.getServer().overworld());

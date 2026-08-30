@@ -11,20 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xaero.map.WorldMapSession;
 import xaero.map.highlight.HighlighterRegistry;
 
-/**
- * World Map (fullscreen map) counterpart to {@code DomainXaeroHighlighterRegistryMixin} — a
- * separate mod/jar from Xaero's Minimap with its own {@code HighlighterRegistry}/{@code
- * ChunkHighlighter} types (see {@link DomainClaimWorldMapChunkHighlighter}'s own doc). Unlike the
- * minimap side, the world map's registry only ever exists as a local variable inside {@code
- * WorldMapSession.init(...)} (confirmed via {@code javap} against the real jar — no field/getter
- * exposes it), so registration needs MixinExtras' {@code @Local} to actually reach it — the exact
- * same technique GTCEu's own production {@code WorldMapSessionMixin} uses for this identical gap.
- * Injects right after {@code HighlighterRegistry.end()} is called, the same insertion point
- * GTCEu's mixin uses.
- * <p>
- * Only ever applied when Xaero's World Map is actually installed — see {@code
- * DomainsMixinConfigPlugin}, same reasoning as the minimap mixin's own doc.
- */
 @Mixin(value = WorldMapSession.class, remap = false)
 public abstract class DomainXaeroWorldMapSessionMixin {
 

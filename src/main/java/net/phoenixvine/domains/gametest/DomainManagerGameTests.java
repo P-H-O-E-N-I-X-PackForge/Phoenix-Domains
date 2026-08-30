@@ -12,13 +12,6 @@ import net.phoenixvine.domains.data.DomainManager;
 
 import java.util.UUID;
 
-/**
- * Real-server coverage for DomainManager.get(ServerLevel) - the one part of DomainManager that
- * JUnit can't reach (see DomainManagerTest's doc comment: everything else is exercised directly
- * against `new DomainManager()`). This covers the SavedData wiring itself: that get() is a
- * genuine per-overworld singleton and that claims made through the live, server-anchored
- * instance behave the same as the in-memory JUnit coverage. Run via `./gradlew runGameTestServer`.
- */
 @GameTestHolder(PhoenixDomains.MOD_ID)
 @PrefixGameTestTemplate(false)
 public class DomainManagerGameTests {

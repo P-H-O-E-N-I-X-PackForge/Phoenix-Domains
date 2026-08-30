@@ -16,17 +16,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Passively accrues claim/chunkload power once per real-time minute for every
- * owner token (guild or solo player) that has at least one member online —
- * this is the "config default, mutable, plus API/admin grants" accrual leg of
- * the claim economy described in the plan; {@link DomainsConfig} supplies rate
- * and cap, {@link ClaimPower} tracks the running total per token.
- */
 @Mod.EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ClaimPowerTickHandler {
 
-    private static final int ACCRUAL_INTERVAL_TICKS = 1200; // 20 ticks/sec * 60 sec
+    private static final int ACCRUAL_INTERVAL_TICKS = 1200;
 
     private static int tickCounter = 0;
 

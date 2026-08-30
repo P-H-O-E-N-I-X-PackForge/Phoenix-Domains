@@ -11,15 +11,6 @@ import xaero.map.highlight.ChunkHighlighter;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * The Xaero World Map (fullscreen map) counterpart to {@link DomainClaimChunkHighlighter} — same
- * fill/border color logic via {@link DomainClaimHighlightColors}, but a different base class
- * (world map and minimap are separate mods/jars with their own, near-identical but distinctly
- * -packaged {@code ChunkHighlighter}/{@code HighlighterRegistry} types — confirmed against both
- * real jars, not assumed) and a tooltip-method shape that returns a {@link Component} directly
- * instead of writing into an {@code InfoDisplayCompiler}. Registered via {@code
- * DomainXaeroWorldMapSessionMixin}.
- */
 public class DomainClaimWorldMapChunkHighlighter extends ChunkHighlighter {
 
     public DomainClaimWorldMapChunkHighlighter() {
@@ -41,13 +32,6 @@ public class DomainClaimWorldMapChunkHighlighter extends ChunkHighlighter {
         return DomainClaimHighlightColors.isHighlit(dimension, chunkX, chunkZ);
     }
 
-    /**
-     * Coarser than GTCEu's own per-chunk accumulation (which iterates all 1024 chunks in the
-     * region) — just folds in {@code ClientDomainCache.version}, which changes on every claim
-     * sync. Invalidates every visible highlighted region on any single claim change rather than
-     * only the actually-affected one, but claim changes are an infrequent user action, not a hot
-     * path, so the simpler always-correct version is worth the minor over-invalidation.
-     */
     @Override
     public int calculateRegionHash(ResourceKey<Level> dimension, int regionX, int regionZ) {
         return Objects.hash(regionX, regionZ, ClientDomainCache.version);
@@ -55,9 +39,7 @@ public class DomainClaimWorldMapChunkHighlighter extends ChunkHighlighter {
 
     @Override
     public void addMinimapBlockHighlightTooltips(List<Component> tooltips, ResourceKey<Level> dimension, int blockX,
-                                                 int blockZ, int width) {
-        // No block-level tooltip content for v1, matching the minimap side's own no-op.
-    }
+                                                 int blockZ, int width) {}
 
     @Override
     public Component getChunkHighlightSubtleTooltip(ResourceKey<Level> dimension, int chunkX, int chunkZ) {

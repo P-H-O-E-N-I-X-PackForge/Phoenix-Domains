@@ -8,18 +8,6 @@ import net.phoenixvine.solaris.client.overlay.SolarisOverlay;
 
 import java.util.Optional;
 
-/**
- * Tints claimed chunks on Solaris's map, reusing whatever {@link ClientDomainCache} already
- * has synced for the HUD/{@code ClaimMapScreen} — no new network traffic. Semi-transparent so
- * terrain stays visible underneath.
- *
- * Chunkload is a property of an existing claim, not an independent state — you can't
- * chunkload a chunk you haven't claimed. The color should carry that dependency: a plain
- * claim shows the owner's chosen color, but chunkloading it overrides that with a fixed gold,
- * so "claimed" and "claimed + chunkloaded" are visually distinct at a glance instead of both
- * just being "owner's color" (which is what the old flat {@code entry.color()} tint did,
- * indistinguishably, regardless of chunkload state).
- */
 public class DomainClaimOverlay implements SolarisOverlay {
 
     private static final int TINT_ALPHA = 0x99;

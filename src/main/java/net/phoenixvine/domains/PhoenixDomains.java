@@ -48,15 +48,6 @@ public class PhoenixDomains {
             DomainNetwork.init();
             ClaimChunkLoader.register();
 
-            // Guarded by isAvailable(), but a stale/mismatched build of an optional
-            // dependency can still report itself present in ModList while lacking a
-            // class we need (NoClassDefFoundError) — catch broadly so a bad optional
-            // jar degrades this one integration instead of crashing Domains entirely.
-            // The actual registration (which touches Chronicles' classes) lives in a
-            // SEPARATE class (ChroniclesQuestFlagRegistrar) from this isAvailable() check -
-            // calling a static method on a class forces the JVM to load/verify that class's
-            // entire bytecode, so keeping the two in the same file meant just evaluating this
-            // guard would already try to resolve Chronicles' types on a server without it.
             if (DomainsChroniclesIntegration.isAvailable()) {
                 try {
                     ChroniclesQuestFlagRegistrar.register();
@@ -71,11 +62,6 @@ public class PhoenixDomains {
         });
     }
 
-    // Re-applies config/phoenix_domains-server-overrides.toml (if present) on top of
-    // whatever the per-world serverconfig produced, every time it (re)loads — see
-    // DomainsConfigOverrides for why this can't be done via a straightforward
-    // ConfigValue#set(...) call. Fires for every mod's configs on this bus, so
-    // DomainsConfigOverrides itself filters to DomainsConfig.SPEC.
     private void onConfigLoad(final ModConfigEvent.Loading event) {
         DomainsConfigOverrides.onLoad(event);
     }

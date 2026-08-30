@@ -24,37 +24,6 @@ import xaero.map.gui.GuiMap;
 
 import java.lang.reflect.Field;
 
-/**
- * Domains-owned claim screen that draws Xaero's World Map's OWN real terrain rendering by
- * puppeteering a real {@link GuiMap} instance we construct and drive ourselves — it is never
- * handed to Minecraft as the active screen, and none of its own input-handling methods
- * ({@code mouseClicked}/{@code mouseDragged}/{@code mouseScrolled}) are ever called on it; the
- * only thing ever called on it is {@link GuiMap#render}. Every mouse-driven claim/pan/zoom
- * action here is ours; {@code GuiMap} contributes visuals only, so it can never collide with our
- * own click handling the way the real, live {@code GuiMap} screen could.
- * <p>
- * This is only possible because (confirmed by decompiling the real jar):
- * <ul>
- * <li>{@code GuiMap#render} is one self-contained method with no separate "just tiles" entry
- * point — but skipping its {@code init()} override means none of its own buttons/widgets ever
- * get added, so the vanilla widget-render pass buried inside its own {@code render()} draws
- * nothing extra.</li>
- * <li>Its {@code render(...)} fully ignores the {@code mouseX}/{@code mouseY} parameters passed
- * to it — it reads the real OS cursor position itself internally, exactly as it would if it were
- * the live screen — so its {@code mouseBlockPosX}/{@code mouseBlockPosZ}/{@code mouseBlockDim}
- * fields end up correctly populated from the real cursor after every {@code render()} call
- * regardless of what we pass in.</li>
- * <li>Camera position ({@code cameraX}/{@code cameraZ}) and zoom ({@code userScale}) are plain
- * private instance fields with no coupling to its own input handlers, so we drive pan/zoom by
- * mutating them directly — matching {@code SolarisClaimMapScreen}'s own middle-drag-pan/
- * scroll-zoom convention — using the {@code scale} field (effective pixels-per-world-unit for
- * the current frame) to convert screen-pixel drag deltas into world-unit deltas.</li>
- * </ul>
- * Risk knowingly accepted: {@code GuiMap} also has two <b>static</b> fields ({@code destScale},
- * a scratch GL framebuffer) shared by every {@code GuiMap} instance in the JVM — harmless as
- * long as no second real {@code GuiMap} is alive at the same time, which can't happen here since
- * only one {@code Screen} is ever active in vanilla Minecraft.
- */
 @OnlyIn(Dist.CLIENT)
 public class XaeroEmbeddedClaimScreen extends Screen {
 
@@ -114,23 +83,14 @@ public class XaeroEmbeddedClaimScreen extends Screen {
         }
     }
 
-    /** Whether this screen can even be constructed — {@code DomainHudOverlay} checks this before opening it. */
     public static boolean isUsable() {
         return fieldsResolved;
     }
 
-    /**
-     * Opens this screen if a usable Xaero World Map session exists; returns {@code false} if not.
-     * Equivalent to calling {@link #tryOpen(Screen)} with {@code null} — i.e. nothing to return to.
-     */
     public static boolean tryOpen() {
         return tryOpen(null);
     }
 
-    /**
-     * Same as {@link #tryOpen()}, but threads {@code returnTo} through so this screen hands the
-     * player back to it (e.g. the inventory screen) on close instead of dropping to the world.
-     */
     public static boolean tryOpen(Screen returnTo) {
         if (!fieldsResolved) return false;
         WorldMapSession session = WorldMapSession.getCurrentSession();
@@ -140,7 +100,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
     }
 
     private final MapProcessor mapProcessor;
-    // The screen to return to (via onClose, below) when this one closes.
+
     private final Screen parent;
     private GuiMap guiMap;
     private boolean panning = false;
@@ -158,10 +118,6 @@ public class XaeroEmbeddedClaimScreen extends Screen {
         this.parent = parent;
     }
 
-    /**
-     * Returns to whichever screen was open before this one (e.g. the inventory screen), instead
-     * of vanilla {@link Screen}'s default of dropping to the world.
-     */
     @Override
     public void onClose() {
         minecraft.setScreen(parent);
@@ -170,15 +126,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
     @Override
     protected void init() {
         Minecraft mc = Minecraft.getInstance();
-        // Deliberately never call the real Screen#init(Minecraft,int,int) lifecycle method —
-        // that's what would trigger GuiMap's own init() override (adding its buttons) via its
-        // "if (!initialized) { initialized = true; init(); }" branch. Turns out skipping it
-        // entirely also skips populating `minecraft`/`font`/`itemRenderer` — contrary to an
-        // earlier (wrong) assumption that Screen's constructor sets those directly, GuiMap's own
-        // render() later tries to self-initialize via that exact lifecycle method when it finds
-        // `minecraft` still null, and crashes reading `this.minecraft.font` since the Minecraft
-        // argument it passes itself is null at that point. Setting these three fields directly
-        // avoids ever hitting that branch, without needing the full lifecycle call.
+
         guiMap = new GuiMap(null, null, mapProcessor, mc.player);
         try {
             minecraftField.set(guiMap, mc);
@@ -198,15 +146,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         renderBackground(g);
         if (guiMap != null) {
-            // No pose-stack scaling wrapped around this call (an earlier version pushed a
-            // 1/guiScale counter-scale, based on a wrong assumption that GuiMap's window-pixel
-            // math needed external compensation). Real decompiled source shows GuiMap already
-            // does its own internal correction before drawing tiles — it scales by
-            // 1/screenScale (a variable populated from the real window's own reported GUI
-            // scale) before translating to the window's center — so it's already self-
-            // correcting for guiScale on an untouched pose stack, exactly as it would if it
-            // were the live screen. The earlier counter-scale was compounding that correction a
-            // second time, shrinking (and effectively hiding) everything it drew.
+
             if (!loggedDiagnostics) {
                 logDiagnostics();
                 loggedDiagnostics = true;
@@ -222,15 +162,6 @@ public class XaeroEmbeddedClaimScreen extends Screen {
         super.render(g, mx, my, partialTick);
     }
 
-    /**
-     * Temporary, one-shot-per-open diagnostic dump — the last several fix attempts (a
-     * guiScale counter-scale, then removing it) produced an IDENTICAL fully-blank result either
-     * way, which points away from a simple pose-stack/scale mismatch and toward something not
-     * visible from source alone (e.g. the wrong GL framebuffer bound during GuiMap's own
-     * internal framebuffer swap). Logging real values here turns the next attempt into a
-     * decision based on actual data instead of another guess. Remove once the real cause is
-     * confirmed.
-     */
     private void logDiagnostics() {
         try {
             var window = Minecraft.getInstance().getWindow();
@@ -342,11 +273,6 @@ public class XaeroEmbeddedClaimScreen extends Screen {
         return mc.player != null && entry.ownerName().equals(mc.player.getName().getString());
     }
 
-    /**
-     * Claims (or shift: claims+chunkloads / turns chunkload on) whatever's currently hovered —
-     * no-ops if we already acted on this exact chunk since the button went down, matching
-     * {@code SolarisClaimMapScreen}'s mass-claim-by-drag guard.
-     */
     private void performClaimAction(boolean shift) {
         if (hoverChunkX == Integer.MIN_VALUE || (hoverChunkX == lastActionChunkX && hoverChunkZ == lastActionChunkZ)) {
             return;
@@ -365,7 +291,6 @@ public class XaeroEmbeddedClaimScreen extends Screen {
         ClaimClickActions.perform(hoverChunkX, hoverChunkZ, false, shift);
     }
 
-    /** Converts a screen-pixel drag delta into a world-unit delta using GuiMap's own current effective scale. */
     private void pan(double dx, double dz) {
         try {
             double scale = (double) scaleField.get(guiMap);
@@ -375,8 +300,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             cameraXField.set(guiMap, cx - dx / scale);
             cameraZField.set(guiMap, cz - dz / scale);
         } catch (ReflectiveOperationException ignored) {
-            // Pan just silently does nothing this frame — not worth a broken-flag latch over a
-            // purely cosmetic no-op.
+
         }
     }
 
@@ -387,7 +311,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             double clamped = Math.max(MIN_USER_SCALE, Math.min(MAX_USER_SCALE, userScale * factor));
             userScaleField.set(guiMap, clamped);
         } catch (ReflectiveOperationException ignored) {
-            // Same reasoning as pan() above.
+
         }
     }
 

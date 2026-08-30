@@ -6,11 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Covers ClaimPower's arithmetic in isolation - pure double/long math with no config or
- * registry dependency, so every rule (accrual capping, floor-on-use, clamp-at-zero) is
- * verifiable without a running game.
- */
 class ClaimPowerTest {
 
     @Test

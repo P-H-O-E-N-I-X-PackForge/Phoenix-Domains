@@ -2,15 +2,6 @@ package net.phoenixvine.domains.data;
 
 import net.minecraft.nbt.CompoundTag;
 
-/**
- * A resource pool for one owner token (guild or solo player UUID). Tracks two
- * independent budgets — claim blocks (spent claiming chunks) and chunkload blocks
- * (spent keeping claimed chunks force-loaded) — each built from three sources:
- * a config base, passive real-time accrual (capped), and admin/API grants.
- *
- * This class does no config lookups itself; callers pass in the current config
- * base/cap so the pool stays decoupled from {@code DomainsConfig}.
- */
 public class ClaimPower {
 
     private double accruedClaim;
@@ -20,8 +11,6 @@ public class ClaimPower {
     private double accruedChunkload;
     private long grantedChunkload;
     private int chunkloadsUsed;
-
-    // ── Claim power ──────────────────────────────────────────────────────────
 
     public void accrueClaimPower(double amount, double accrualCap) {
         accruedClaim = Math.min(accruedClaim + amount, accrualCap);
@@ -51,8 +40,6 @@ public class ClaimPower {
         claimsUsed = Math.max(0, claimsUsed - 1);
     }
 
-    // ── Chunkload power ──────────────────────────────────────────────────────
-
     public void accrueChunkloadPower(double amount, double accrualCap) {
         accruedChunkload = Math.min(accruedChunkload + amount, accrualCap);
     }
@@ -80,8 +67,6 @@ public class ClaimPower {
     public void decrementChunkloadsUsed() {
         chunkloadsUsed = Math.max(0, chunkloadsUsed - 1);
     }
-
-    // ── NBT ───────────────────────────────────────────────────────────────────
 
     public CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();

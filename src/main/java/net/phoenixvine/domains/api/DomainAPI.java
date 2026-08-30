@@ -27,20 +27,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
 
-/**
- * Stable public API for Phoenix Domains — the single entry point for other mods
- * (and this mod's own commands/network handlers) to query or mutate claims.
- * Mirrors the {@code GuildAPI} / {@code QuestAPI} house style: a final class,
- * private constructor, static methods, safe to call from any server-side code.
- */
 public final class DomainAPI {
 
     private DomainAPI() {}
-
-    // ── Feature gating ───────────────────────────────────────────────────────
-    // Mirrors SolarisAPI's gating system exactly (feature gates, tiers, per-dimension states) so
-    // an RPG/progression pack can lock claiming/chunkloading/flags behind quests or player level
-    // the same way it already can for Solaris's map features.
 
     public static final String FEATURE_CLAIMING = "claiming";
     public static final String FEATURE_CHUNKLOADING = "chunkloading";
@@ -128,8 +117,6 @@ public final class DomainAPI {
                 perDimension.getOrDefault(dimension, DomainFeatureState.ENABLED);
     }
 
-    // ── Query ─────────────────────────────────────────────────────────────────
-
     public static Optional<UUID> getOwner(MinecraftServer server, ChunkKey key) {
         return manager(server).getClaim(key).map(Claim::getOwner);
     }
@@ -138,7 +125,6 @@ public final class DomainAPI {
         return manager(server).isClaimed(key);
     }
 
-    /** True if the player may break/place/build at this position — also true when unclaimed. */
     public static boolean canInteract(ServerPlayer player, BlockPos pos) {
         ChunkKey key = ChunkKey.of(player.level(), pos.getX(), pos.getZ());
         return manager(player.getServer()).getClaim(key)
@@ -155,19 +141,12 @@ public final class DomainAPI {
                 .getAvailableChunkloadBlocks(DomainsConfig.CHUNKLOAD_POWER_BASE.get());
     }
 
-    // ── Claim actions ────────────────────────────────────────────────────────
-    // Return a result key: "ok" on success, or an error key for the caller to
-    // translate/display — mirrors GuildManager's promote/demote/ally result style.
-
     public static String claim(ServerPlayer player, ChunkKey key) {
         if (!isFeatureEnabled(FEATURE_CLAIMING, key.dimension())) return "feature_disabled";
 
         DomainManager manager = manager(player.getServer());
         if (manager.isClaimed(key)) return "already_claimed";
 
-        // The claim map lets a player pan around and see chunks far past where they're
-        // actually standing — without this, that'd let anyone claim land anywhere they've
-        // simply looked at, not just land they've traveled to.
         int maxDistance = DomainsConfig.MAX_CLAIM_DISTANCE_CHUNKS.get();
         if (maxDistance > 0) {
             int playerChunkX = player.blockPosition().getX() >> 4;
@@ -245,9 +224,6 @@ public final class DomainAPI {
         return "ok";
     }
 
-    // ── Admin / external grants ─────────────────────────────────────────────
-
-    /** Grants extra claim power to an owner token (guild or solo player UUID). No-op if the server isn't running. */
     public static void grantClaimPower(UUID token, long amount) {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null || token == null) return;
@@ -256,9 +232,6 @@ public final class DomainAPI {
         manager.setDirty();
     }
 
-    /**
-     * Grants extra chunkload power to an owner token (guild or solo player UUID). No-op if the server isn't running.
-     */
     public static void grantChunkloadPower(UUID token, long amount) {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null || token == null) return;
@@ -267,12 +240,6 @@ public final class DomainAPI {
         manager.setDirty();
     }
 
-    /**
-     * Force-claims a chunk for {@code owner}, bypassing distance/power/permission checks entirely
-     * — the direct-chunk-state equivalent of {@link #grantClaimPower}/{@link #grantChunkloadPower}
-     * (those only touch the power pool, not chunk state directly). Unclaims any existing owner
-     * first. No-op if the server isn't running.
-     */
     public static void adminSetClaim(MinecraftServer server, ChunkKey key, UUID owner) {
         if (server == null || owner == null) return;
         DomainManager manager = manager(server);
@@ -280,7 +247,6 @@ public final class DomainAPI {
         manager.claim(key, owner);
     }
 
-    /** Force-unclaims a chunk regardless of owner/permission. Also turns off chunkloading if it was on. */
     public static void adminRemoveClaim(MinecraftServer server, ChunkKey key) {
         if (server == null) return;
         DomainManager manager = manager(server);
@@ -293,9 +259,6 @@ public final class DomainAPI {
         manager.unclaim(key);
     }
 
-    /**
-     * Force-sets chunkload state on an already-claimed chunk, bypassing power/permission checks. No-op if unclaimed.
-     */
     public static void adminSetChunkloaded(MinecraftServer server, ChunkKey key, boolean chunkloaded) {
         if (server == null) return;
         DomainManager manager = manager(server);
@@ -306,8 +269,6 @@ public final class DomainAPI {
         manager.setChunkloaded(key, chunkloaded);
         ClaimChunkLoader.setChunkForced(level, key, chunkloaded);
     }
-
-    // ── Internal ──────────────────────────────────────────────────────────────
 
     private static DomainManager manager(MinecraftServer server) {
         return DomainManager.get(server.overworld());

@@ -4,7 +4,6 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 
-/** Client-only display tuning — separate from {@link DomainsConfig} since that's server-side claim economy tuning. */
 public final class DomainsClientConfig {
 
     public static final ForgeConfigSpec SPEC;

@@ -16,9 +16,7 @@ public class S2CDomainSyncPacket {
     public record ClaimEntry(int x, int z, String ownerName, int color, boolean chunkloaded) {}
 
     private final List<ClaimEntry> claims;
-    // The square region (centerX/centerZ +/- radius) this sync actually covers — ClientDomainCache
-    // needs this to merge by-region (clear then repopulate only this square) instead of fully
-    // replacing its whole known claim set on every sync, see its own doc for why.
+
     private final int centerX;
     private final int centerZ;
     private final int radius;

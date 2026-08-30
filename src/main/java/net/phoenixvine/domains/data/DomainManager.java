@@ -15,24 +15,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Server-wide claim storage. A single instance is anchored to the overworld's
- * {@code DataStorage} (mirrors {@code GuildManager}) so the claim-power economy
- * stays a single shared pool per owner token regardless of which dimension a
- * chunk was claimed in.
- */
 public class DomainManager extends SavedData {
 
     private static final String SAVE_KEY = "phoenix_domains";
-    // See GuildManager's own DATA_VERSION doc — same scaffolding-for-future-migrations purpose,
-    // same "no migration needed yet, this is just the hook" status.
+
     private static final int DATA_VERSION = 1;
 
     private final Map<ChunkKey, Claim> claims = new LinkedHashMap<>();
     private final Map<UUID, Set<ChunkKey>> claimsByOwner = new HashMap<>();
     private final Map<UUID, ClaimPower> powers = new HashMap<>();
-
-    // ── SavedData factory ─────────────────────────────────────────────────────
 
     public static DomainManager get(ServerLevel overworld) {
         return overworld.getDataStorage().computeIfAbsent(DomainManager::load, DomainManager::new, SAVE_KEY);
@@ -44,7 +35,7 @@ public class DomainManager extends SavedData {
 
         ListTag claimList = tag.getList("claims", Tag.TAG_COMPOUND);
         for (int i = 0; i < claimList.size(); i++) {
-            // A single malformed claim compound must not take down every other claim's data.
+
             try {
                 Claim claim = Claim.deserialize(claimList.getCompound(i));
                 mgr.claims.put(claim.getKey(), claim);
@@ -86,8 +77,6 @@ public class DomainManager extends SavedData {
         return tag;
     }
 
-    // ── Claim query ───────────────────────────────────────────────────────────
-
     public Optional<Claim> getClaim(ChunkKey key) {
         return Optional.ofNullable(claims.get(key));
     }
@@ -104,7 +93,6 @@ public class DomainManager extends SavedData {
         return claims.size();
     }
 
-    /** How many of {@code token}'s claimed chunks currently have chunkloading turned on. */
     public int getChunkloadedCountForOwner(UUID token) {
         int count = 0;
         for (ChunkKey key : getClaimsForOwner(token)) {
@@ -114,9 +102,6 @@ public class DomainManager extends SavedData {
         return count;
     }
 
-    // ── Claim mutation ───────────────────────────────────────────────────────
-
-    /** Claims the chunk for the given owner token. Returns false if already claimed. */
     public boolean claim(ChunkKey key, UUID owner) {
         if (claims.containsKey(key)) return false;
         Claim claim = new Claim(key, owner);
@@ -127,7 +112,6 @@ public class DomainManager extends SavedData {
         return true;
     }
 
-    /** Unclaims the chunk. Returns false if it wasn't claimed. */
     public boolean unclaim(ChunkKey key) {
         Claim claim = claims.remove(key);
         if (claim == null) return false;
@@ -145,7 +129,6 @@ public class DomainManager extends SavedData {
         return true;
     }
 
-    /** Toggles chunkloading for an already-claimed chunk. Returns false if not claimed. */
     public boolean setChunkloaded(ChunkKey key, boolean chunkloaded) {
         Claim claim = claims.get(key);
         if (claim == null || claim.isChunkloaded() == chunkloaded) return false;
@@ -165,8 +148,6 @@ public class DomainManager extends SavedData {
         claim.setFlag(flag, value);
         setDirty();
     }
-
-    // ── Power ─────────────────────────────────────────────────────────────────
 
     public ClaimPower getOrCreatePower(UUID token) {
         return powers.computeIfAbsent(token, k -> new ClaimPower());

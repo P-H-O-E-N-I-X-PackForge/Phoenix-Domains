@@ -32,20 +32,8 @@ import net.phoenixvine.domains.ownership.DomainOwnership;
 
 import java.util.Optional;
 
-/**
- * Enforces claim protection: rank/ally-gated block access (break/place/interact/
- * containers/buckets), non-member damage to owned animals, and the environmental
- * {@link ClaimFlag} toggles (PvP, explosions, mob griefing, spawning, fluid flow).
- *
- * Fire spread has no cancelable vanilla/Forge hook (confirmed against the
- * decompiled {@code FireBlock} source — {@code tryCatchFire} calls
- * {@code Level#setBlockAndUpdate} directly) so {@link ClaimFlag#FIRE_SPREAD} is
- * intentionally not enforced here; a mixin would be required to close that gap.
- */
 @Mod.EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ClaimProtectionEvents {
-
-    // ── Block access ─────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void onBreak(BlockEvent.BreakEvent event) {
@@ -95,7 +83,6 @@ public class ClaimProtectionEvents {
         });
     }
 
-    /** Right-click with a bucket: filling (taking fluid) or emptying (placing it) both need build trust. */
     @SubscribeEvent
     public static void onFillBucket(FillBucketEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
@@ -109,8 +96,6 @@ public class ClaimProtectionEvents {
         });
     }
 
-    // ── PvP and animal protection ───────────────────────────────────────────
-
     @SubscribeEvent
     public static void onLivingAttack(LivingAttackEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
@@ -122,8 +107,7 @@ public class ClaimProtectionEvents {
                 if (!ClaimPermissions.canPvp(claim)) event.setCanceled(true);
             });
         } else if (victim instanceof Animal || victim instanceof AbstractVillager) {
-            // Protects farm animals and villagers from non-members; hostile mobs are left
-            // alone so a visiting ally can still fight off a zombie that wandered in.
+
             claimAt(victim.level(), victim.blockPosition()).ifPresent(claim -> {
                 if (!ClaimPermissions.canBuild(attacker, claim)) {
                     event.setCanceled(true);
@@ -132,8 +116,6 @@ public class ClaimProtectionEvents {
             });
         }
     }
-
-    // ── Explosions ───────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
@@ -145,8 +127,6 @@ public class ClaimProtectionEvents {
         });
     }
 
-    // ── Mob griefing ─────────────────────────────────────────────────────────
-
     @SubscribeEvent
     public static void onMobGriefing(EntityMobGriefingEvent event) {
         Entity entity = event.getEntity();
@@ -155,8 +135,6 @@ public class ClaimProtectionEvents {
             if (!claim.getFlag(ClaimFlag.MOB_GRIEFING)) event.setResult(Event.Result.DENY);
         });
     }
-
-    // ── Spawning ─────────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void onSpawnPlacementCheck(MobSpawnEvent.SpawnPlacementCheck event) {
@@ -168,16 +146,12 @@ public class ClaimProtectionEvents {
         });
     }
 
-    // ── Fluids ───────────────────────────────────────────────────────────────
-
     @SubscribeEvent
     public static void onFluidPlace(BlockEvent.FluidPlaceBlockEvent event) {
         claimAt(event.getLevel(), event.getPos()).ifPresent(claim -> {
             if (!claim.getFlag(ClaimFlag.FLUID_FLOW)) event.setCanceled(true);
         });
     }
-
-    // ── Shared helpers ───────────────────────────────────────────────────────
 
     private static Optional<Claim> claimAt(LevelAccessor level, BlockPos pos) {
         if (!(level instanceof ServerLevel serverLevel)) return Optional.empty();

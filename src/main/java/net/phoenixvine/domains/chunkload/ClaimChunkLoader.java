@@ -12,17 +12,6 @@ import net.phoenixvine.domains.data.DomainManager;
 
 import java.util.Optional;
 
-/**
- * Bridges claimed-and-chunkloaded {@link Claim}s to Forge's ticket-based force-loading
- * ({@link ForgeChunkManager}). Each forced chunk's "owner" is a synthetic
- * {@code BlockPos(chunkX, 0, chunkZ)} — not a real block, just a stable per-chunk
- * grouping key for the ticket system.
- *
- * Forge only reinstates a mod's forced chunks across a restart if that mod has
- * registered a {@link ForgeChunkManager.LoadingValidationCallback} — {@link #register()}
- * does that, and prunes any ticket whose backing claim is gone or no longer
- * chunkloaded (e.g. the save file was hand-edited, or a crash left stale state).
- */
 public final class ClaimChunkLoader {
 
     private ClaimChunkLoader() {}
@@ -51,7 +40,6 @@ public final class ClaimChunkLoader {
         }
     }
 
-    /** Adds or removes the live Forge ticket for a chunk. Does not touch claim data. */
     public static void setChunkForced(ServerLevel level, ChunkKey key, boolean forced) {
         BlockPos owner = new BlockPos(key.x(), 0, key.z());
         ForgeChunkManager.forceChunk(level, PhoenixDomains.MOD_ID, owner, key.x(), key.z(), forced, true);

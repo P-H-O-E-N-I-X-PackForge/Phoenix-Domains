@@ -14,13 +14,6 @@ import dev.latvian.mods.kubejs.script.BindingsEvent;
 import dev.latvian.mods.kubejs.script.ScriptType;
 import dev.latvian.mods.kubejs.util.ClassFilter;
 
-/**
- * Exposes {@link DomainAPI} to KubeJS scripts, so an RPG/progression pack can query or mutate
- * claims from script instead of only from Java mod code — same pattern as Solaris's and
- * PhoenixChronicles' own KubeJS plugins. Only ever instantiated by KubeJS itself (via
- * {@code kubejs.plugins.txt}), and only if KubeJS is actually installed — see build.gradle for
- * why this is a compile-only dependency.
- */
 public class DomainsKubeJSPlugin extends KubeJSPlugin {
 
     @Override

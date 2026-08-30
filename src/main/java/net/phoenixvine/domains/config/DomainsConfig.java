@@ -4,12 +4,6 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 
-/**
- * Server-side claim economy tuning. Every owner token's {@code ClaimPower} is
- * built from three sources at query time: this config's base, real-time passive
- * accrual (rate/cap also from here), and admin/API grants stored on the pool
- * itself — see {@link net.phoenixvine.domains.data.ClaimPower}.
- */
 public final class DomainsConfig {
 
     public static final ForgeConfigSpec SPEC;

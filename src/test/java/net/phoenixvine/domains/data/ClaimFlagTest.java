@@ -31,9 +31,6 @@ class ClaimFlagTest {
 
     @Test
     void defaultValuesMatchDocumentedIntent() {
-        // Spot-check a few defaults that Claim's override logic depends on directly - if these
-        // ever change, Claim.setFlag's "only store when it differs from default" behavior for
-        // these specific flags would silently change meaning too.
         assertEquals(false, ClaimFlag.MOB_GRIEFING.defaultValue());
         assertEquals(true, ClaimFlag.FLUID_FLOW.defaultValue());
         assertEquals(false, ClaimFlag.PVP.defaultValue());

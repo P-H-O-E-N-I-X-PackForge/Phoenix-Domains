@@ -19,20 +19,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Draws one {@link PolygonOverlay} per claimed chunk currently in {@link ClientDomainCache},
- * mirroring {@code DomainClaimOverlay}'s Solaris equivalent — same color rule (gold when
- * chunkloaded, else the claim's own {@code entry.color()}, both already resolved server-side by
- * {@code DomainNetwork.toEntry}), same "only the current dimension, only what's already synced
- * for the HUD" scope (no new network traffic, no attempt at a whole-world view).
- * <p>
- * One polygon per chunk (via {@link PolygonHelper#createChunkPolygon}) rather than merging
- * adjacent claimed chunks into a single region (JourneyMap's own {@code PolygonHelper
- * .createChunksPolygon} could do that) — keeps add/remove diffing against
- * {@link ClientDomainCache#claims} a simple per-chunk key comparison instead of recomputing a
- * merged shape on every change; a nicer merged-outline version is a possible follow-up, not
- * needed for claims to actually show up correctly.
- */
 final class DomainClaimJourneyMapOverlay {
 
     private static final int FILL_OPACITY_PERCENT = 40;
@@ -42,7 +28,6 @@ final class DomainClaimJourneyMapOverlay {
     private final Map<Long, PolygonOverlay> shown = new HashMap<>();
     private ResourceKey<Level> lastDimension = null;
 
-    /** Call every time {@link ClientDomainCache#version} changes. Safe no-op if JourneyMap won't accept polygons. */
     void sync(IClientAPI api) {
         if (!api.playerAccepts(PhoenixDomains.MOD_ID, DisplayType.Polygon)) return;
 

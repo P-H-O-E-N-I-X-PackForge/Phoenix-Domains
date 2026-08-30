@@ -4,7 +4,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
-/** Identifies a single chunk within a specific dimension. */
 public record ChunkKey(ResourceLocation dimension, int x, int z) {
 
     public static ChunkKey of(ResourceLocation dimension, ChunkPos pos) {

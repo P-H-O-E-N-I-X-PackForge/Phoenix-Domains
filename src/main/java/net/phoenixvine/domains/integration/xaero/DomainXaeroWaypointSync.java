@@ -17,18 +17,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Drops one Xaero waypoint per claim OWNER currently visible in {@link ClientDomainCache} — not
- * one per claimed chunk, which would spam dozens/hundreds of pins onto the minimap for a single
- * large claimed territory (unlike {@code DomainClaimJourneyMapOverlay}'s per-chunk polygons,
- * which read fine at any density since they're fills, not point markers). This is deliberately
- * the lower-fidelity fallback next to the real chunk-region borders {@code
- * DomainClaimChunkHighlighter} draws — a quick "whose land is this" pointer, not a border.
- * <p>
- * Uses the real, non-mixin custom-waypoints API confirmed against the actual Xaero jar: {@code
- * BuiltInHudModules.MINIMAP.getCurrentSession().getWorldManager().getCustomWaypoints(modId)}
- * returns an {@code Int2ObjectMap<Waypoint>} third-party mods just put/remove into directly.
- */
 public final class DomainXaeroWaypointSync {
 
     private static final ResourceLocation NAMESPACE = PhoenixDomains.id("claim_owners");
@@ -41,7 +29,6 @@ public final class DomainXaeroWaypointSync {
 
     private DomainXaeroWaypointSync() {}
 
-    /** Call only after {@code DomainsXaeroMinimapIntegration.isAvailable()} has returned true. */
     public static void sync() {
         INSTANCE.doSync();
     }
@@ -59,7 +46,6 @@ public final class DomainXaeroWaypointSync {
             lastDimension = dimension;
         }
 
-        // First claim entry seen per owner name stands in for that owner's whole territory.
         Map<String, S2CDomainSyncPacket.ClaimEntry> representative = new LinkedHashMap<>();
         for (S2CDomainSyncPacket.ClaimEntry entry : ClientDomainCache.claims) {
             representative.putIfAbsent(entry.ownerName(), entry);
@@ -92,7 +78,6 @@ public final class DomainXaeroWaypointSync {
         return name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase();
     }
 
-    /** {@link WaypointColor} is a fixed 16-color palette, not arbitrary RGB — nearest match by channel distance. */
     private static WaypointColor nearestColor(int rgb) {
         int r = rgb >> 16 & 0xFF, g = rgb >> 8 & 0xFF, b = rgb & 0xFF;
         WaypointColor best = WaypointColor.WHITE;

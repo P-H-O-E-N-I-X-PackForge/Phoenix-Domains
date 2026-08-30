@@ -22,12 +22,12 @@ public class C2SDomainActionPacket {
     }
 
     private final Action action;
-    private final String dimension; // empty = player's current dimension
+    private final String dimension;
     private final int x;
     private final int z;
-    private final String arg; // flag name for SET_FLAG
-    private final boolean boolArg; // chunkloaded/flag value
-    private final int radius; // for REQUEST_SYNC
+    private final String arg;
+    private final boolean boolArg;
+    private final int radius;
 
     public C2SDomainActionPacket(Action action, String dimension, int x, int z, String arg, boolean boolArg,
                                  int radius) {
@@ -98,10 +98,7 @@ public class C2SDomainActionPacket {
 
             if (action != Action.REQUEST_SYNC) {
                 DomainNetwork.sendSync(player, 8);
-                // The player-centered sync above only ever looks near the player's own physical
-                // position, so an acted-upon chunk far from there (e.g. clicked on a zoomed-out
-                // Xaero/JourneyMap view) would never be included in any sync — send its true state
-                // directly regardless of where the player actually is.
+
                 ChunkKey acted = key(player);
                 DomainNetwork.sendSyncAt(player, acted.x(), acted.z(), 1);
             }

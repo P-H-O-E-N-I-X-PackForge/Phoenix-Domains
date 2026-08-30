@@ -97,8 +97,6 @@ public class DomainCommands {
                 .then(admin));
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     private static int claim(CommandSourceStack source) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         String result = DomainAPI.claim(player, currentChunk(player));
@@ -186,7 +184,6 @@ public class DomainCommands {
         return 1;
     }
 
-    /** Force-claims {@code target}'s current chunk for {@code owner}'s token, bypassing all normal checks. */
     private static int adminClaim(CommandSourceStack source, ServerPlayer target, ServerPlayer owner) {
         UUID token = DomainOwnership.tokenFor(owner.getUUID());
         DomainAPI.adminSetClaim(source.getServer(), currentChunk(target), token);
@@ -197,7 +194,6 @@ public class DomainCommands {
         return 1;
     }
 
-    /** Force-unclaims {@code target}'s current chunk, bypassing owner/permission checks. */
     private static int adminUnclaim(CommandSourceStack source, ServerPlayer target) {
         DomainAPI.adminRemoveClaim(source.getServer(), currentChunk(target));
         source.sendSuccess(() -> Component.literal(
@@ -205,7 +201,6 @@ public class DomainCommands {
         return 1;
     }
 
-    /** Force-sets chunkload state on {@code target}'s current chunk, bypassing power/permission checks. */
     private static int adminChunkload(CommandSourceStack source, ServerPlayer target, boolean value) {
         DomainAPI.adminSetChunkloaded(source.getServer(), currentChunk(target), value);
         source.sendSuccess(() -> Component.literal(
@@ -214,8 +209,6 @@ public class DomainCommands {
                 true);
         return 1;
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static ChunkKey currentChunk(ServerPlayer player) {
         return ChunkKey.of(player.level(), player.blockPosition().getX(), player.blockPosition().getZ());

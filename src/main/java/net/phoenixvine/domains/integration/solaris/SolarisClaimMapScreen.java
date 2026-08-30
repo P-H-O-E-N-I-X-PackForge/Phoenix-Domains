@@ -18,37 +18,6 @@ import net.phoenixvine.solaris.client.render.MapViewport;
 import net.phoenixvine.solaris.client.render.VanillaPanel;
 import net.phoenixvine.solaris.config.SolarisConfig;
 
-/**
- * The claim screen used when Solaris is installed: real sampled terrain, rendered through
- * {@link MapTileCache} — the same chunk-content-addressed tile system {@code SolarisMapScreen}'s
- * own flat view uses, NOT the older fixed-window {@code SolarisTexture} buffer this screen
- * originally used. That buffer scrolled/rebuilt around a moving player-centered anchor, so
- * panning past its radius regressed already-explored chunks back to fog and it never picked up
- * anything added to Solaris after the tile system replaced it (starfield/phoenix/cloud unexplored
- * styles, theme-aware rendering, free panning across everything explored). Tiles have no notion of
- * "camera position" at all — a tile's content depends only on its own chunks' persisted data — so
- * this screen can pan anywhere already explored with nothing ever scrolling out.
- * <p>
- * Claimed chunks are tinted via {@link DomainClaimOverlay}, a normal {@code SolarisOverlay}
- * registered through {@link DomainsSolarisIntegration#init()} — overlays are chunk-based
- * ({@code colorAt(dimension, chunkX, chunkZ)}), so they apply identically whether the caller is
- * {@code SolarisTexture} or {@code MapTileCache}; nothing about this rewrite touches that class.
- * <p>
- * Lives in {@code integration.solaris} (not {@code client.map}) because, like every other
- * class in this package, it directly references Solaris types and must never be
- * instantiated except behind {@link DomainsSolarisIntegration#isAvailable()}.
- * <p>
- * Controls: left-click claims, right-click unclaims — separate dedicated buttons (not one
- * toggle) specifically so you can hold a button down and drag across many chunks to mass-
- * claim/unclaim without a chunk you're just passing over flipping to the opposite of what you
- * want. Shift+left-click claims AND chunkloads in one action (or just turns chunkload on);
- * shift+right-click turns chunkload off without unclaiming. Panning is on middle-click-drag
- * instead of left, since left is now a direct claim action — this also matters for a reason
- * beyond input conflicts: this map lets you pan and see chunks far past where you're actually
- * standing, and letting that double as the claim button would make it too easy to claim land
- * you've never traveled to. ({@link net.phoenixvine.domains.api.DomainAPI#claim} enforces a
- * max distance server-side regardless, but the controls shouldn't invite trying to abuse it.)
- */
 @OnlyIn(Dist.CLIENT)
 public class SolarisClaimMapScreen extends Screen {
 
@@ -69,9 +38,6 @@ public class SolarisClaimMapScreen extends Screen {
     private int frameH;
     private boolean notifiedViewOnly = false;
 
-    // The screen to return to (via onClose, below) when this one closes - e.g. the inventory
-    // screen if this was opened from the cross-suite HUD bar button while inventory was open, or
-    // null if there was nothing open beforehand (opened from plain gameplay via keybind).
     private final Screen parent;
 
     public SolarisClaimMapScreen() {
@@ -102,16 +68,11 @@ public class SolarisClaimMapScreen extends Screen {
         DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.requestSync(SolarisConfig.MAP_RADIUS_CHUNKS.get()));
     }
 
-    /**
-     * Returns to whichever screen was open before this one (e.g. the inventory screen), instead
-     * of vanilla {@link Screen}'s default of dropping to the world.
-     */
     @Override
     public void onClose() {
         minecraft.setScreen(parent);
     }
 
-    /** World chunk coords under a screen position, or {@code null} if outside the map frame. */
     private int[] chunkAt(double mx, double my) {
         if (mx < frameX || mx > frameX + frameW || my < frameY || my > frameY + frameH) return null;
         int blockX = (int) Math.floor(viewport.toWorldX(mx, 0));
@@ -150,11 +111,6 @@ public class SolarisClaimMapScreen extends Screen {
         renderSidebar(g, hovered, hoveredEntry);
     }
 
-    /**
-     * Tiles sourced directly from {@link MapTileCache}, independent of player/camera position —
-     * same approach and same tile-boundary-alignment math as {@code SolarisMapScreen}'s own
-     * {@code renderFlatMapTiles}. Uses LOD-based rendering for performance at any zoom level.
-     */
     private void renderTiles(GuiGraphics g) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
@@ -184,9 +140,7 @@ public class SolarisClaimMapScreen extends Screen {
             for (int tx = tileMinX; tx <= tileMaxX; tx++) {
                 MapTileCache.TileKey key = new MapTileCache.TileKey(dimension, tx, tz, lod);
                 MapTileCache.MapTile tile = MapTileCache.getOrBuildTile(key);
-                // null means the persisted store isn't finished loading yet — skip drawing this
-                // tile for now rather than building it with an incomplete picture; it'll be ready
-                // within a frame or two once the (async, one-time-per-dimension) load completes.
+
                 if (tile == null) continue;
 
                 int tileWorldX = tx * tileWorldSize;
@@ -202,13 +156,6 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
-    /**
-     * Chunk boundary lines derived from world chunk coordinates, not a fixed texture window.
-     * Skipped at low zoom (matches {@code SolarisMapScreen.drawChunkGridWorld}'s own threshold):
-     * once each chunk is only a couple screen pixels wide, the grid degenerates into solid noise
-     * instead of useful boundary lines, and drawing a line per chunk across the whole visible
-     * world gets expensive for no visual benefit.
-     */
     private void drawChunkGrid(GuiGraphics g) {
         if (viewport.getZoom() < 0.4f) return;
 
@@ -231,13 +178,6 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
-    /**
-     * Uses the exact same per-edge {@code toScreenX/toScreenY} truncation as {@link #drawChunkGrid}
-     * for both edges of the box, instead of deriving a width from {@code 16 * zoom} — the two
-     * roundings don't agree (the "16 * zoom" edge drifts from the grid's independently-truncated
-     * line position as zoom changes), which is what made the hover highlight visibly misaligned
-     * from the grid lines it's supposed to be tracing.
-     */
     private void highlightChunk(GuiGraphics g, int cx, int cz, int outlineColor) {
         int x0 = (int) viewport.toScreenX(cx << 4, 0);
         int y0 = (int) viewport.toScreenY(cz << 4, 0);
@@ -319,10 +259,6 @@ public class SolarisClaimMapScreen extends Screen {
         return y + 2;
     }
 
-    /**
-     * {@code VISIBLE}-only access refuses claim/unclaim/chunkload clicks here, client-side.
-     * Checks the integration state using our safe proxy class instead of directly loading Solaris classes.
-     */
     private boolean canManage() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return true;
@@ -342,11 +278,6 @@ public class SolarisClaimMapScreen extends Screen {
         return mc.player != null && entry.ownerName().equals(mc.player.getName().getString());
     }
 
-    /**
-     * Claims (or shift: claims+chunkloads / turns chunkload on) whatever's hovered — no-ops if
-     * we already acted on this exact chunk since the button went down, so holding the button
-     * and dragging across many chunks claims each one once, not every frame.
-     */
     private void performClaimAction(double mx, double my, boolean shift) {
         if (!canManage()) return;
         int[] hovered = chunkAt(mx, my);
@@ -369,10 +300,6 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
-    /**
-     * Unclaims (or shift: just removes chunkload, keeping the claim) whatever's hovered — same
-     * once-per-chunk-per-drag guard as {@link #performClaimAction}.
-     */
     private void performUnclaimAction(double mx, double my, boolean shift) {
         if (!canManage()) return;
         int[] hovered = chunkAt(mx, my);

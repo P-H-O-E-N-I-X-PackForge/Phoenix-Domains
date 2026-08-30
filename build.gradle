@@ -66,13 +66,10 @@ repositories {
     maven { // Registrate
         url = "https://maven.tterrag.com/"
         content {
-// need to be specific here due to version overlaps
             includeGroup("com.tterrag.registrate")
         }
     }
     maven {
-        // KubeJS — optional scripting integration only, see integration.kubejs. Mirrors the same
-        // coordinates/version already verified working in Solaris and PhoenixChronicles.
         name = 'LatvianModder'
         url = 'https://maven.latvian.dev/releases'
         content {
@@ -96,16 +93,8 @@ legacyForge {
 
     runs {
         configureEach {
-            // Recommended logging data for a userdev environment
-            // The markers can be added/remove as needed separated by commas.
-            // "SCAN": For mods scan.
-            // "REGISTRIES": For firing of registry events.
-            // "REGISTRYDUMP": For getting the contents of all registries.
             systemProperty 'forge.logging.markers', 'REGISTRIES'
 
-            // Recommended logging level for the console
-            // You can set various levels here.
-            // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             logLevel = org.slf4j.event.Level.DEBUG
         }
         client {
@@ -121,9 +110,6 @@ legacyForge {
             programArguments.addAll('--nogui', '--world', 'world-extra')
         }
         gameTestServer {
-            // RunModel has no gameTestServer() convenience method (only client()/clientData()/
-            // data()/server()/serverData()) - the run type still exists in Forge's userdev
-            // template though, so it's set directly via the underlying `type` property.
             type = 'gameTestServer'
             sourceSet = sourceSets.main
             systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
@@ -131,16 +117,11 @@ legacyForge {
         data {
             data()
             sourceSet = sourceSets.main
-            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             programArguments.addAll('--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath())
         }
     }
 
     mods {
-        // define mod <-> source bindings
-        // these are used to tell the game which sources are for which mod
-        // mostly optional in a single mod project
-        // but multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
@@ -167,24 +148,18 @@ dependencies {
 
     modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
 
-    modImplementation 'curse.maven:phoenix-guilds-1612085:8460956'
+    modImplementation 'curse.maven:phoenix-guilds-1612085:8743646'
 
-    modCompileOnly 'curse.maven:phoenix-chronicles-quests-1614113:8465025'
+    modCompileOnly 'curse.maven:phoenix-chronicles-quests-1614113:8751236'
+    modRuntimeOnly 'curse.maven:phoenix-chronicles-quests-1614113:8751236'
 
-    modCompileOnly project(':Solaris')
-
-    modRuntimeOnly 'curse.maven:phoenix-guilds-1612085:8460956'
+    modCompileOnly'curse.maven:solaris-map-1622856:8747223'
+    modRuntimeOnly'curse.maven:solaris-map-1622856:8747223'
 
     modRuntimeOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
 
-    modRuntimeOnly 'curse.maven:phoenix-chronicles-quests-1614113:8465025'
-
-    modRuntimeOnly project(':Solaris')
-
-    
     modCompileOnly("info.journeymap:journeymap-api:${journeymap_api_version}")
     modCompileOnly("curse.maven:journeymap-32274:${journeymap_curse_file}")
-   //modRuntimeOnly("curse.maven:journeymap-32274:${journeymap_curse_file}")
 
     modCompileOnly("xaero.lib:xaerolib-forge-${minecraft_version}:${xaeroslib_version}")
     modCompileOnly("xaero.map:xaeroworldmap-forge-${minecraft_version}:${xaerosworldmap_version}")
@@ -197,18 +172,10 @@ dependencies {
 
     modRuntimeOnly("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
 
-    // KubeJS — compile-time only: the plugin class (see integration.kubejs) is only ever
-    // instantiated by KubeJS itself (via kubejs.plugins.txt), and only if KubeJS is actually
-    // installed, so Domains works fine without it at runtime. Not added as modRuntimeOnly since
-    // packs that DO run KubeJS already provide it themselves — bundling/requiring our own copy
-    // would just be redundant and risks a version clash with whatever the pack ships.
     modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 
-    // Phoenix Wiki - jar-in-jar'd shared theme system (net.phoenixvine.wiki.theme.PhoenixTheme)
-    // and markdown/wiki engine (net.phoenixvine.wiki.PhoenixWikiAPI) - the same theme choice this
-    // library holds is shared with every other Phoenixvine mod that also embeds it. After changing
-    // anything in that project, run `./gradlew publishToDomains` there to refresh libs/phoenix_wiki-*.jar.
-    jarJar(modImplementation("local:phoenix_wiki:0.1.0"))
+
+    modImplementation("curse.maven:phoenixwiki-1647798:8735977")
 
 
     // lombok
@@ -221,10 +188,7 @@ dependencies {
 
 sourceSets {
     test {
-        // Pulls in the same Minecraft/Forge classpath main compiles against, so pure-logic
-        // classes that merely reference simple data types (ChunkKey, CompoundTag, UUID) can be
-        // unit tested without a running game or registry bootstrap - anything that actually
-        // needs live registries/rendering stays untested.
+
         compileClasspath += sourceSets.main.compileClasspath
         runtimeClasspath += sourceSets.main.runtimeClasspath
     }
@@ -243,7 +207,7 @@ tasks.named('processResources', ProcessResources).configure {
             "mod_name": mod_name,
             "mod_url": mod_url,
             "mod_author": mod_author,
-            "forge_version": forge_version.split("\\.")[0], // only specify major version of forge
+            "forge_version": forge_version.split("\\.")[0],
             "minecraft_version": minecraft_version,
     ]
     inputs.properties(properties)
@@ -255,11 +219,7 @@ tasks.named('processResources', ProcessResources).configure {
 
 tasks.named('jar', Jar).configure { finalizedBy 'reobfJar' }
 tasks.withType(JavaCompile).configureEach {
-    // ensure that the encoding is set to UTF-8, no matter what the system default is
-    // this fixes some edge cases with special characters not displaying correctly
-    // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-    // If Javadoc is generated, this must be specified in that task too.
     options.encoding = "UTF-8"
     options.release.set(17)
-    options.compilerArgs << "-Aquiet=true" // Suppress mixin notes
+    options.compilerArgs << "-Aquiet=true"
 }

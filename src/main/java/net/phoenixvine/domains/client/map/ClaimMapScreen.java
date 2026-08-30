@@ -26,43 +26,6 @@ import net.phoenixvine.wiki.theme.PhoenixThemeEditorScreen;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Claim grid: a top-down chunk grid centered on the player. Deliberately grid-based
- * rather than a pannable/zoomable terrain view — claiming is an inherently per-chunk
- * action, so a literal chunk grid with a side info panel reads better than scrolling
- * around Solaris's full map to poke at one square. Solaris is only a soft/optional
- * dependency of this mod (its claim-tint overlay lives in {@code integration.solaris},
- * applied to Solaris's own map screen when present) — this screen is always what
- * Domains' own map keybind opens, so it must render with vanilla-only primitives and
- * never reach for Solaris chrome.
- * <p>
- * Each cell's base color is one real terrain sample (the top non-air block's vanilla
- * {@link MapColor} at that chunk's center column, the same per-block color vanilla's own
- * item maps use) rather than a flat gray — enough to actually read as a map (forests,
- * water, sand, stone) without the cost of Solaris's full per-pixel terrain pipeline, which
- * isn't available here since this screen is exactly what renders when Solaris isn't
- * installed. One sample per chunk, cached forever once a chunk is loaded (this screen's
- * center never moves after {@link #init()}, so terrain never needs to be re-sampled) —
- * chunks not yet loaded just show a neutral placeholder and get sampled lazily the moment
- * they become available.
- * <p>
- * The grid's radius is capped to the client's own render distance setting (minus a small
- * margin), not a fixed constant — a fixed radius bigger than what the client actually keeps
- * loaded around the player would show real terrain only near the center and a permanently
- * gray, never-populated ring around the rest of the grid, which reads as "stopped loading"
- * even though it's working exactly as designed (unloaded chunks are retried every frame,
- * they just never succeed if they're outside the player's own loaded/simulated area).
- *
- * Controls: left-click claims an unclaimed chunk, right-click unclaims your own — separate
- * dedicated buttons rather than one toggle, specifically so you can hold the button down and
- * drag across many chunks to mass-claim/unclaim without worrying about a chunk you're just
- * passing over toggling to the opposite of what you want. Shift+left-click claims AND
- * chunkloads a chunk in one action (or just turns chunkload on if you already own it);
- * shift+right-click turns chunkload off without unclaiming. The server is the actual
- * authority on all of this (ownership/permission/power checks, plus a max-claim-distance
- * limit) — clicks just fire the same {@code C2SDomainActionPacket} actions it already
- * validates.
- */
 @OnlyIn(Dist.CLIENT)
 public class ClaimMapScreen extends Screen {
 
@@ -81,9 +44,6 @@ public class ClaimMapScreen extends Screen {
 
     private final Map<Long, Integer> terrainColorCache = new HashMap<>();
 
-    // The screen to return to (via onClose, below) when this one closes - e.g. the inventory
-    // screen if this was opened from the cross-suite HUD bar button while inventory was open, or
-    // null if there was nothing open beforehand (opened from plain gameplay via keybind).
     private final Screen parent;
 
     private int radius;
@@ -111,10 +71,6 @@ public class ClaimMapScreen extends Screen {
         this.parent = parent;
     }
 
-    /**
-     * Returns to whichever screen was open before this one (e.g. the inventory screen), instead
-     * of vanilla {@link Screen}'s default of dropping to the world.
-     */
     @Override
     public void onClose() {
         minecraft.setScreen(parent);
@@ -124,9 +80,6 @@ public class ClaimMapScreen extends Screen {
     protected void init() {
         Minecraft mc = Minecraft.getInstance();
 
-        // Undershoot the client's own render distance setting by a couple of chunks — actually
-        // *loaded*/simulated chunks tend to lag slightly behind that setting (it's a target, not
-        // a guarantee), so matching it exactly would still leave a thin gray ring at the edge.
         radius = Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, mc.options.renderDistance().get() - 2));
 
         int span = radius * 2 + 1;
@@ -140,13 +93,6 @@ public class ClaimMapScreen extends Screen {
         recenterOnPlayer();
     }
 
-    /**
-     * Re-reads the player's current chunk position — called every {@link #render}, not just
-     * once at {@link #init()}, since this screen isn't a pause screen and the player can walk
-     * around while it's open. A one-time snapshot centered on wherever the player happened to be
-     * when the map was opened would otherwise stay put while they moved away from it, which
-     * reads as "the map doesn't follow me."
-     */
     private void recenterOnPlayer() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
@@ -183,13 +129,7 @@ public class ClaimMapScreen extends Screen {
 
                 S2CDomainSyncPacket.ClaimEntry entry = ClientDomainCache.entryAt(cx, cz);
                 if (entry != null) {
-                    // Chunkload is a property of an existing claim, not an independent state — a
-                    // chunkloaded claim is solid gold rather than owner-color-plus-a-strip, so
-                    // "claimed" and "claimed + chunkloaded" read as genuinely distinct at a
-                    // glance. A light tint plus a solid owner-colored border (thicker for
-                    // chunkloaded claims) reads as "a plot on a map" — mirroring how claim mods
-                    // like FTB Chunks mark ownership — rather than an opaque block of color
-                    // that hides the terrain sampled underneath it.
+
                     int rgb = entry.chunkloaded() ? CHUNKLOADED_RGB : (entry.color() & 0xFFFFFF);
                     g.fill(x0 + 1, y0 + 1, x0 + cell - 1, y0 + cell - 1, 0x50000000 | rgb);
                     outlineRect(g, x0, y0, cell, cell, 0xFF000000 | rgb, entry.chunkloaded() ? 2 : 1);
@@ -214,7 +154,6 @@ public class ClaimMapScreen extends Screen {
         super.render(g, mx, my, partialTick);
     }
 
-    /** A dark, gently gradient-shaded panel with a subtle bevel border — the shared "chrome" for both panels. */
     private void panel(GuiGraphics g, int x, int y, int w, int h) {
         g.fillGradient(x, y, x + w, y + h, DomainsThemePalette.PANEL_BG_TOP, DomainsThemePalette.PANEL_BG_BOTTOM);
         g.renderOutline(x, y, w, h, DomainsThemePalette.PANEL_BORDER);
@@ -223,7 +162,6 @@ public class ClaimMapScreen extends Screen {
 
     private int themeLinkX, themeLinkW, wikiLinkX, wikiLinkW, themeLinksY;
 
-    /** A small "Theme" / "Wiki" link pair in the top-left corner, above the grid panel. */
     private void renderThemeLinks(GuiGraphics g, int mx, int my) {
         themeLinksY = MARGIN - 10;
         if (themeLinksY < 2) themeLinksY = 2;
@@ -242,10 +180,6 @@ public class ClaimMapScreen extends Screen {
                 DomainsThemePalette.TEXT_DIM, false);
     }
 
-    /**
-     * Opens the dev wiki via the jar-in-jar'd Phoenix Wiki library, themed to match this mod's
-     * currently active (suite-wide shared) PhoenixTheme.
-     */
     private void openWiki() {
         if (minecraft == null) return;
         PhoenixTheme t = PhoenixTheme.current();
@@ -263,12 +197,6 @@ public class ClaimMapScreen extends Screen {
         g.fill(x + w - thickness, y, x + w, y + h, color);
     }
 
-    /**
-     * The top non-air block's vanilla map color at this chunk's center column, cached forever
-     * once sampled (this screen's grid never re-centers, so terrain never changes underneath
-     * it). Chunks not yet loaded return a neutral placeholder without being cached, so they get
-     * a real sample the moment they do load in.
-     */
     private int terrainColorAt(Level level, int chunkX, int chunkZ) {
         long key = ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
         Integer cached = terrainColorCache.get(key);
@@ -283,20 +211,10 @@ public class ClaimMapScreen extends Screen {
 
         int rgb;
         if (!state.getFluidState().isEmpty() && state.getFluidState().is(FluidTags.WATER)) {
-            // Vanilla's own MapColor.WATER is the same flat, washed-out light blue every Java
-            // Edition item map uses — fine at map-item scale, but flat and a bit ugly filling an
-            // entire chunk cell here. A richer, slightly deeper blue reads better at this size
-            // without pretending to be a real depth-shaded water renderer.
+
             rgb = WATER_RGB;
         } else {
-            // MapColor#calculateRGBColor packs its result as `-16777216 | blue<<16 | green<<8 |
-            // red` (meant for NativeImage's byte order), not standard ARGB — used directly, that
-            // silently swaps red and blue for every terrain color, which is exactly what turned
-            // water (correctly detected or not) reddish instead of blue. Un-swap it back to
-            // proper ARGB before the small flat darken (which itself just reads a touch
-            // richer/moodier than vanilla's fairly washed-out map palette — subtle on purpose,
-            // this is still meant to be a plain, cheap fallback, not Solaris's full terrain
-            // pipeline).
+
             int packed = state.getMapColor(level, pos).calculateRGBColor(MapColor.Brightness.NORMAL);
             int properRgb = ((packed & 0xFF) << 16) | (packed & 0x00FF00) | ((packed >> 16) & 0xFF);
             rgb = darken(properRgb, 0.9f);
@@ -381,7 +299,6 @@ public class ClaimMapScreen extends Screen {
         drawWrapped(g, Component.translatable("domains.map.hint_chunkload"), tx, ty, maxTextW);
     }
 
-    /** A small colored swatch followed by a label — used for the ownership legend. */
     private int legendRow(GuiGraphics g, int x, int y, int swatchColor, String labelKey) {
         int swatch = 7;
         int textY = y + (swatch - font.lineHeight) / 2;
@@ -411,11 +328,6 @@ public class ClaimMapScreen extends Screen {
         return mc.player != null && entry.ownerName().equals(mc.player.getName().getString());
     }
 
-    /**
-     * Claims (or shift: claims+chunkloads / turns chunkload on) whatever's currently hovered
-     * — no-ops if we already acted on this exact chunk since the button went down, so holding
-     * the button and dragging across many chunks claims each one once, not every frame.
-     */
     private void performClaimAction(boolean shift) {
         if (hoveredX == Integer.MIN_VALUE || (hoveredX == lastActionChunkX && hoveredZ == lastActionChunkZ)) return;
         lastActionChunkX = hoveredX;
@@ -434,10 +346,6 @@ public class ClaimMapScreen extends Screen {
         }
     }
 
-    /**
-     * Unclaims (or shift: just removes chunkload, keeping the claim) whatever's hovered — same
-     * once-per-chunk-per-drag guard as {@link #performClaimAction}.
-     */
     private void performUnclaimAction(boolean shift) {
         if (hoveredX == Integer.MIN_VALUE || (hoveredX == lastActionChunkX && hoveredZ == lastActionChunkZ)) return;
         lastActionChunkX = hoveredX;

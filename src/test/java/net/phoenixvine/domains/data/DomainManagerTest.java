@@ -10,12 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Covers DomainManager's in-memory claim/power bookkeeping directly - it only needs a live
- * ServerLevel for its static SavedData factory (get()), everything else (claim/unclaim/
- * chunkload/flag mutation and the query methods) operates on its own maps, so `new
- * DomainManager()` here exercises the real logic without any game bootstrap.
- */
 class DomainManagerTest {
 
     private static ChunkKey key(int x, int z) {

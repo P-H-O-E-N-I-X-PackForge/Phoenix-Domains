@@ -26,51 +26,19 @@ import net.phoenixvine.domains.network.C2SDomainActionPacket;
 import net.phoenixvine.domains.network.DomainNetwork;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
 
-/**
- * Rough v1 HUD: a single centered top-of-screen line naming whoever owns the chunk the player is
- * standing in (or "Wilderness"). Also drives the periodic sync request that keeps {@link
- * ClientDomainCache} populated for both this and the claim map screen(s), and pokes the
- * JourneyMap/Xaero Minimap integrations' claim-overlay sync whenever {@link ClientDomainCache}
- * changes — neither of those mods knows on its own when Domains' claim data changes, so this is
- * the only trigger for either (see {@code DomainJourneyMapPlugin}/{@code DomainXaeroWaypointSync}).
- * <p>
- * The map keybind always opens a screen Domains itself owns — never the real, live {@code GuiMap}
- * /{@code Fullscreen} screen those mods' own keybinds open, so our own claim-click handling can
- * never collide with their panning/waypoint clicks. Priority: Solaris's real-terrain claim screen
- * ({@code SolarisClaimMapScreen}, using its own excellent map API) if Solaris is present; else
- * Xaero's World Map's real terrain via {@link XaeroEmbeddedClaimScreen} (which puppeteers a real,
- * un-activated {@code GuiMap} instance purely for its visuals); else JourneyMap's real terrain via
- * {@link JourneyMapEmbeddedClaimScreen} (which owns a private {@code GridRenderer} instance, a
- * genuinely standalone public API); else the vanilla-only {@link ClaimMapScreen} if none of those
- * are present or all fail. Claim borders/waypoints still render on Xaero's/JourneyMap's own real
- * maps whenever a player opens either through that mod's own keybind, via the overlay-sync
- * integrations below — those are unaffected by this keybind's own choice of screen. (Xaero's
- * World Map and JourneyMap's fullscreen map also still support click-to-claim directly, via
- * {@code ClaimClickHandler}, for players who get there through that mod's own keybind instead of
- * this one.)
- */
 @Mod.EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class DomainHudOverlay {
 
-    private static final int SYNC_INTERVAL_TICKS = 40; // 2 real-time seconds
+    private static final int SYNC_INTERVAL_TICKS = 40;
     private static final int SYNC_RADIUS = 8;
 
     private static int tickCounter = 0;
     private static int lastSeenCacheVersion = -1;
 
-    // Set once if a call into the respective integration throws, so a stale/mismatched optional
-    // jar (ModList says present, but a class we need is actually missing/incompatible) logs once
-    // and stops retrying that one integration, instead of retrying — and potentially
-    // re-throwing — on every single client tick. Independent per integration so a broken
-    // JourneyMap jar, say, doesn't also disable the (unrelated) Solaris integration.
     private static boolean solarisBroken = false;
     private static boolean journeyMapBroken = false;
     private static boolean xaeroMinimapBroken = false;
-    // Separate from journeyMapBroken/xaeroMinimapBroken above — those cover the overlay-sync
-    // integrations (claim borders/waypoints drawn on an already-open real map); these cover the
-    // map keybind's own embedded-real-terrain screens, a different code path (real GuiMap/
-    // GridRenderer puppeteering) that can fail independently of whether the overlay sync itself
-    // is still working.
+
     private static boolean xaeroEmbedBroken = false;
     private static boolean journeyMapEmbedBroken = false;
 
@@ -130,30 +98,10 @@ public class DomainHudOverlay {
         DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.requestSync(SYNC_RADIUS));
     }
 
-    /**
-     * Opens Domains' own claim map, in the same priority order described on the class doc: Solaris's
-     * real-terrain screen if present and visible, else Xaero's World Map embedded screen, else
-     * JourneyMap's embedded screen, else the vanilla-only {@link ClaimMapScreen} fallback. This is
-     * the single shared implementation of that priority chain — both the {@code OPEN_MAP} keybind
-     * above and the suite HUD bar button (registered with {@code SuiteHudBar} in
-     * {@code PhoenixDomainsClient}) call this exact method rather than duplicating the chain.
-     * No-ops if some other screen is already open or the player isn't currently in a world.
-     * <p>
-     * Equivalent to calling {@link #openClaimMap(Screen)} with {@code null} — i.e. there's nothing
-     * to return to when the map closes. Used by the {@code OPEN_MAP} keybind, which only ever fires
-     * from plain gameplay with no screen open in the first place.
-     */
     public static void openClaimMap() {
         openClaimMap(null);
     }
 
-    /**
-     * Same as {@link #openClaimMap()}, but threads {@code returnTo} through to whichever claim map
-     * screen ends up opening, so that screen hands the player back to {@code returnTo} on close
-     * instead of dropping to the world. The suite HUD bar button's registered click callback uses
-     * this overload, passing the screen that was open (e.g. the inventory screen) when the button
-     * was clicked.
-     */
     public static void openClaimMap(Screen returnTo) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null || mc.level == null || mc.player == null) return;

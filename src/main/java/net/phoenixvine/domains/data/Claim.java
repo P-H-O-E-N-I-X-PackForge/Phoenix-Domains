@@ -7,7 +7,6 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** A single claimed chunk. Owner is a "token" — a guild UUID or a solo player's own UUID. */
 public class Claim {
 
     private final ChunkKey key;
@@ -65,8 +64,6 @@ public class Claim {
     public Map<ClaimFlag, Boolean> getFlagOverrides() {
         return flagOverrides;
     }
-
-    // ── NBT ───────────────────────────────────────────────────────────────────
 
     public CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();

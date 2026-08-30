@@ -2,12 +2,6 @@ package net.phoenixvine.domains.client;
 
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 
-/**
- * Flat primitive color cache for Domains' UI chrome, sourced from the shared, suite-wide
- * {@link PhoenixTheme}. Deliberately only covers panel/text chrome - the claim-map's semantic
- * colors (chunkloaded=gold, yours=green, water, per-owner colors) stay fixed regardless of theme,
- * since they carry real meaning rather than being decorative.
- */
 public final class DomainsThemePalette {
 
     private DomainsThemePalette() {}
