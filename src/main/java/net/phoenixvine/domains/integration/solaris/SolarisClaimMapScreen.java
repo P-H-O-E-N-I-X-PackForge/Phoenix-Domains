@@ -156,8 +156,13 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
+    // Matches SolarisMapScreen.CHUNK_GRID_MIN_ZOOM — "die past 200" refers to Solaris's own scale
+    // bar reading (blocks = 60/zoom), not the raw zoom multiplier, so the actual cutoff is
+    // zoom < 60/200 despite this screen not drawing a scale bar of its own.
+    private static final float CHUNK_GRID_MIN_ZOOM = 60f / 200f;
+
     private void drawChunkGrid(GuiGraphics g) {
-        if (viewport.getZoom() > 200f) return;
+        if (viewport.getZoom() < CHUNK_GRID_MIN_ZOOM) return;
 
         int gridColor = 0x44FFFFFF;
 
