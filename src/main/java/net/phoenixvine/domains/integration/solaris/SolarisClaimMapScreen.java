@@ -157,14 +157,16 @@ public class SolarisClaimMapScreen extends Screen {
     }
 
     private void drawChunkGrid(GuiGraphics g) {
-        if (viewport.getZoom() < 0.4f) return;
+        if (viewport.getZoom() > 200f) return;
 
-        int gridColor = 0x22FFFFFF;
+        int gridColor = 0x44FFFFFF;
 
         int chunkMinX = (int) Math.floor(viewport.toWorldX(frameX, 0)) >> 4;
         int chunkMaxX = (int) Math.floor(viewport.toWorldX(frameX + frameW, 0)) >> 4;
         for (int cx = chunkMinX; cx <= chunkMaxX + 1; cx++) {
-            int sx = (int) viewport.toScreenX(cx << 4, 0);
+            // Round, not truncate — matches SolarisMapScreen's drawChunkGridWorld, fixing the same
+            // grid-vs-terrain 1px drift while panning ("jiggle") that truncation caused there.
+            int sx = (int) Math.round(viewport.toScreenX(cx << 4, 0));
             if (sx < frameX || sx > frameX + frameW) continue;
             g.fill(sx, frameY, sx + 1, frameY + frameH, gridColor);
         }
@@ -172,17 +174,19 @@ public class SolarisClaimMapScreen extends Screen {
         int chunkMinZ = (int) Math.floor(viewport.toWorldZ(frameY, 0)) >> 4;
         int chunkMaxZ = (int) Math.floor(viewport.toWorldZ(frameY + frameH, 0)) >> 4;
         for (int cz = chunkMinZ; cz <= chunkMaxZ + 1; cz++) {
-            int sy = (int) viewport.toScreenY(cz << 4, 0);
+            int sy = (int) Math.round(viewport.toScreenY(cz << 4, 0));
             if (sy < frameY || sy > frameY + frameH) continue;
             g.fill(frameX, sy, frameX + frameW, sy + 1, gridColor);
         }
     }
 
     private void highlightChunk(GuiGraphics g, int cx, int cz, int outlineColor) {
-        int x0 = (int) viewport.toScreenX(cx << 4, 0);
-        int y0 = (int) viewport.toScreenY(cz << 4, 0);
-        int x1 = (int) viewport.toScreenX((cx + 1) << 4, 0);
-        int y1 = (int) viewport.toScreenY((cz + 1) << 4, 0);
+        // Matches drawChunkGrid's rounding exactly (both edges independently rounded, same as the
+        // grid's own lines) so the highlight box still lines up with the grid it's tracing.
+        int x0 = (int) Math.round(viewport.toScreenX(cx << 4, 0));
+        int y0 = (int) Math.round(viewport.toScreenY(cz << 4, 0));
+        int x1 = (int) Math.round(viewport.toScreenX((cx + 1) << 4, 0));
+        int y1 = (int) Math.round(viewport.toScreenY((cz + 1) << 4, 0));
         if (x1 < frameX || x0 > frameX + frameW || y1 < frameY || y0 > frameY + frameH) return;
         g.renderOutline(x0, y0, x1 - x0, y1 - y0, outlineColor);
     }
