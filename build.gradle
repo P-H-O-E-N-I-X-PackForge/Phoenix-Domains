@@ -63,6 +63,14 @@ repositories {
     flatDir {
         dir 'libs'
     }
+
+    maven {
+        name = "Repsy"
+        url = uri("https://repo.repsy.io/mvn/user75142941/phoenixsuite")
+    }
+    maven {
+        url = "https://maven.architectury.dev"
+    }
     maven { // Registrate
         url = "https://maven.tterrag.com/"
         content {
@@ -76,6 +84,11 @@ repositories {
             includeGroup 'dev.latvian.mods'
         }
     }
+    maven {
+        name = "ftbMavenReleases"
+        url = uri("https://maven.ftb.dev/releases")
+    }
+
 }
 
 version = mod_version
@@ -148,13 +161,11 @@ dependencies {
 
     modImplementation("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
 
-    modImplementation 'curse.maven:phoenix-guilds-1612085:8743646'
+    modCompileOnly 'curse.maven:ftb-teams-forge-404468:7499810'
+    modRuntimeOnly 'curse.maven:ftb-teams-forge-404468:7499810'
 
-    modCompileOnly 'curse.maven:phoenix-chronicles-quests-1614113:8751236'
-    modRuntimeOnly 'curse.maven:phoenix-chronicles-quests-1614113:8751236'
-
-    modCompileOnly'curse.maven:solaris-map-1622856:8747223'
-    modRuntimeOnly'curse.maven:solaris-map-1622856:8747223'
+    modCompileOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
+    modRuntimeOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
 
     modRuntimeOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
 
@@ -175,7 +186,19 @@ dependencies {
     modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 
 
-    modImplementation("curse.maven:phoenixwiki-1647798:8735977")
+   modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.8")
+
+    modCompileOnly'net.phoenixvine.solaris:solaris:1.6'
+    modRuntimeOnly'net.phoenixvine.solaris:solaris:1.6'
+
+    modCompileOnly 'net.phoenixvine.chronicles:phoenix_chronicles:7.0.4'
+    modRuntimeOnly 'net.phoenixvine.chronicles:phoenix_chronicles:7.0.4'
+
+    modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
+    modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
+
+
+    modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
 
 
     // lombok
@@ -222,4 +245,23 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
     options.release.set(17)
     options.compilerArgs << "-Aquiet=true"
+}
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = base.archivesName.get()
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "Repsy"
+            url = uri("https://repo.repsy.io/mvn/user75142941/phoenixsuite")
+            credentials {
+                username = project.findProperty("repsyUsername") ?: System.getenv("REPSY_USERNAME")
+                password = project.findProperty("repsyPassword") ?: System.getenv("REPSY_PASSWORD")
+            }
+        }
+    }
 }

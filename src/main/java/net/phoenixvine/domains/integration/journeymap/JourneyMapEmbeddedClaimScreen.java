@@ -10,10 +10,15 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.client.ClientDomainCache;
+import net.phoenixvine.domains.client.DomainsThemePalette;
 import net.phoenixvine.domains.integration.claimclick.ClaimClickActions;
 import net.phoenixvine.domains.network.C2SDomainActionPacket;
 import net.phoenixvine.domains.network.DomainNetwork;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
+import net.phoenixvine.wiki.PhoenixWikiAPI;
+import net.phoenixvine.wiki.client.screen.WikiTheme;
+import net.phoenixvine.wiki.theme.PhoenixTheme;
+import net.phoenixvine.wiki.theme.PhoenixThemeEditorScreen;
 
 import journeymap.client.api.display.Context;
 import journeymap.client.io.FileHandler;
@@ -131,12 +136,13 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
 
         S2CDomainSyncPacket.ClaimEntry hoveredEntry = hoverChunkX != Integer.MIN_VALUE ?
                 ClientDomainCache.entryAt(hoverChunkX, hoverChunkZ) : null;
-        renderSidebar(g, hoveredEntry);
+        renderSidebar(g, mx, my, hoveredEntry);
 
         super.render(g, mx, my, partialTick);
     }
 
-    private void renderSidebar(GuiGraphics g, S2CDomainSyncPacket.ClaimEntry hoveredEntry) {
+    private void renderSidebar(GuiGraphics g, int mx, int my, S2CDomainSyncPacket.ClaimEntry hoveredEntry) {
+        DomainsThemePalette.refresh();
         int x = width - SIDEBAR_W - MARGIN;
         int y = MARGIN;
         int w = SIDEBAR_W;
@@ -191,7 +197,39 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         ty = drawWrapped(g, Component.translatable("domains.map.hint_claim"), tx, ty, maxTextW);
         ty = drawWrapped(g, Component.translatable("domains.map.hint_unclaim"), tx, ty, maxTextW);
         ty = drawWrapped(g, Component.translatable("domains.map.hint_chunkload"), tx, ty, maxTextW);
-        drawWrapped(g, Component.translatable("domains.map.hint_pan_middle"), tx, ty, maxTextW);
+        ty = drawWrapped(g, Component.translatable("domains.map.hint_pan_middle"), tx, ty, maxTextW);
+        ty += 4;
+        ty = divider(g, tx, ty, x + w - 8);
+        renderThemeLinks(g, mx, my, tx, ty);
+    }
+
+    private int themeLinkX, themeLinkW, wikiLinkX, wikiLinkW, themeLinksY;
+
+    private void renderThemeLinks(GuiGraphics g, int mx, int my, int x, int y) {
+        themeLinksY = y;
+
+        themeLinkX = x;
+        themeLinkW = font.width("[ THEME ]");
+        boolean themeHov = mx >= themeLinkX && mx < themeLinkX + themeLinkW && my >= themeLinksY &&
+                my < themeLinksY + 9;
+        g.drawString(font, "[ THEME ]", themeLinkX, themeLinksY,
+                themeHov ? DomainsThemePalette.ACCENT : DomainsThemePalette.TEXT_DIM, false);
+
+        wikiLinkX = themeLinkX + themeLinkW + 12;
+        wikiLinkW = font.width("[ WIKI ]");
+        boolean wikiHov = mx >= wikiLinkX && mx < wikiLinkX + wikiLinkW && my >= themeLinksY && my < themeLinksY + 9;
+        g.drawString(font, "[ WIKI ]", wikiLinkX, themeLinksY,
+                wikiHov ? DomainsThemePalette.ACCENT : DomainsThemePalette.TEXT_DIM, false);
+    }
+
+    private void openWiki() {
+        if (minecraft == null) return;
+        PhoenixTheme t = PhoenixTheme.current();
+        WikiTheme wikiTheme = new WikiTheme(
+                t.bg.getColor(), t.panel.getColor(), t.header.getColor(), t.border.getColor(),
+                t.accent.getColor(), t.text.getColor(), t.textDim.getColor(), t.textFaint.getColor(),
+                t.done.getColor(), t.activeColor.getColor());
+        PhoenixWikiAPI.open(this, "phoenix_domains", "wiki", wikiTheme);
     }
 
     private int divider(GuiGraphics g, int x1, int y, int x2) {
@@ -233,6 +271,17 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (super.mouseClicked(mx, my, button)) return true;
+
+        if (button == 0 && mx >= themeLinkX && mx < themeLinkX + themeLinkW && my >= themeLinksY &&
+                my < themeLinksY + 9) {
+            if (minecraft != null) minecraft.setScreen(new PhoenixThemeEditorScreen(this, "Phoenix Domains"));
+            return true;
+        }
+        if (button == 0 && mx >= wikiLinkX && mx < wikiLinkX + wikiLinkW && my >= themeLinksY &&
+                my < themeLinksY + 9) {
+            openWiki();
+            return true;
+        }
 
         if (button == 0) {
             leftHeld = true;

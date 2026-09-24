@@ -11,7 +11,8 @@ issueTrackerURL="https://github.com/Omicron-Industries/PhoenixDomains/issues" #o
     displayURL = "${mod_url}"
     authors="${mod_author}"
     description = '''
-Phoenix Domains — chunk claiming and land protection for guilds and solo players, built on Phoenix Guilds.
+Phoenix Domains — chunk claiming and land protection for guilds/teams and solo players. Requires
+either Phoenix Guilds or FTB Teams for group ownership.
 '''
 
     [[dependencies.${mod_id}]]
@@ -28,8 +29,20 @@ Phoenix Domains — chunk claiming and land protection for guilds and solo playe
         side = "BOTH"
     [[dependencies.${mod_id}]]
         modId = "phoenix_guilds"
-        mandatory = true
+        mandatory = false
         versionRange = "[0.1.0,)"
+        ordering = "AFTER"
+        side = "BOTH"
+    [[dependencies.${mod_id}]]
+        modId = "ftbteams"
+        mandatory = false
+        versionRange = "[2001.2.0,)"
+        ordering = "AFTER"
+        side = "BOTH"
+    [[dependencies.${mod_id}]]
+        modId = "phoenix_wiki"
+        mandatory = true
+        versionRange = "[0,)"
         ordering = "AFTER"
         side = "BOTH"
     [[dependencies.${mod_id}]]

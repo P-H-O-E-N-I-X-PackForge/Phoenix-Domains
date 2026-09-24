@@ -16,7 +16,7 @@ public class DomainKeybinds {
     public static final KeyMapping OPEN_MAP = new KeyMapping(
             "key.phoenix_domains.map",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_K,
+            GLFW.GLFW_KEY_I,
             "key.categories.phoenix_domains");
 
     public static final KeyMapping TOGGLE_HUD = new KeyMapping(

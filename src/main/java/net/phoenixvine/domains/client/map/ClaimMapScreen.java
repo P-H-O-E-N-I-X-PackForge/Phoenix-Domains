@@ -110,7 +110,6 @@ public class ClaimMapScreen extends Screen {
         recenterOnPlayer();
         renderBackground(g);
         panel(g, gridPx - 4, gridPy - 4, gridSize + 8, gridSize + 8);
-        renderThemeLinks(g, mx, my);
 
         Level level = Minecraft.getInstance().level;
 
@@ -149,7 +148,7 @@ public class ClaimMapScreen extends Screen {
             }
         }
 
-        renderSidebar(g, hoveredEntry);
+        renderSidebar(g, hoveredEntry, mx, my);
 
         super.render(g, mx, my, partialTick);
     }
@@ -162,22 +161,26 @@ public class ClaimMapScreen extends Screen {
 
     private int themeLinkX, themeLinkW, wikiLinkX, wikiLinkW, themeLinksY;
 
-    private void renderThemeLinks(GuiGraphics g, int mx, int my) {
-        themeLinksY = MARGIN - 10;
-        if (themeLinksY < 2) themeLinksY = 2;
+    /**
+     * Rendered inside our own sidebar panel (at the given x/y), not the screen's top-left corner
+     * -- other mods' always-on-top HUD overlays (energy/status readouts, etc.) can occupy that
+     * corner and silently paint over anything drawn there.
+     */
+    private void renderThemeLinks(GuiGraphics g, int mx, int my, int x, int y) {
+        themeLinksY = y;
 
-        themeLinkX = gridPx;
-        themeLinkW = font.width("✎ Theme");
+        themeLinkX = x;
+        themeLinkW = font.width("[ THEME ]");
         boolean themeHov = mx >= themeLinkX && mx < themeLinkX + themeLinkW && my >= themeLinksY &&
                 my < themeLinksY + 9;
-        g.drawString(font, themeHov ? "§b✎ Theme" : "§8✎ Theme", themeLinkX, themeLinksY,
-                DomainsThemePalette.TEXT_DIM, false);
+        g.drawString(font, "[ THEME ]", themeLinkX, themeLinksY,
+                themeHov ? DomainsThemePalette.ACCENT : DomainsThemePalette.TEXT_DIM, false);
 
         wikiLinkX = themeLinkX + themeLinkW + 12;
-        wikiLinkW = font.width("📖 Wiki");
+        wikiLinkW = font.width("[ WIKI ]");
         boolean wikiHov = mx >= wikiLinkX && mx < wikiLinkX + wikiLinkW && my >= themeLinksY && my < themeLinksY + 9;
-        g.drawString(font, wikiHov ? "§b📖 Wiki" : "§8📖 Wiki", wikiLinkX, themeLinksY,
-                DomainsThemePalette.TEXT_DIM, false);
+        g.drawString(font, "[ WIKI ]", wikiLinkX, themeLinksY,
+                wikiHov ? DomainsThemePalette.ACCENT : DomainsThemePalette.TEXT_DIM, false);
     }
 
     private void openWiki() {
@@ -232,7 +235,7 @@ public class ClaimMapScreen extends Screen {
         return (r << 16) | (gr << 8) | b;
     }
 
-    private void renderSidebar(GuiGraphics g, S2CDomainSyncPacket.ClaimEntry hoveredEntry) {
+    private void renderSidebar(GuiGraphics g, S2CDomainSyncPacket.ClaimEntry hoveredEntry, int mx, int my) {
         int x = width - SIDEBAR_W - MARGIN;
         int y = MARGIN;
         int w = SIDEBAR_W;
@@ -296,7 +299,10 @@ public class ClaimMapScreen extends Screen {
 
         ty = drawWrapped(g, Component.translatable("domains.map.hint_claim"), tx, ty, maxTextW);
         ty = drawWrapped(g, Component.translatable("domains.map.hint_unclaim"), tx, ty, maxTextW);
-        drawWrapped(g, Component.translatable("domains.map.hint_chunkload"), tx, ty, maxTextW);
+        ty = drawWrapped(g, Component.translatable("domains.map.hint_chunkload"), tx, ty, maxTextW);
+        ty += 4;
+        ty = divider(g, tx, ty, x + w - 8);
+        renderThemeLinks(g, mx, my, tx, ty);
     }
 
     private int legendRow(GuiGraphics g, int x, int y, int swatchColor, String labelKey) {

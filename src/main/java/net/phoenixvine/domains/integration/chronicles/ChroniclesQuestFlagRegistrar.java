@@ -5,6 +5,6 @@ public final class ChroniclesQuestFlagRegistrar {
     private ChroniclesQuestFlagRegistrar() {}
 
     public static void register() {
-        net.phoenixvine.chronicles.flag.PhoenixQuestFlags.registerProvider(new DomainQuestFlagProvider());
+        net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags.registerProvider(new DomainQuestFlagProvider());
     }
 }

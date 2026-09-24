@@ -3,12 +3,7 @@ package net.phoenixvine.domains.ownership;
 import net.minecraft.server.level.ServerPlayer;
 import net.phoenixvine.domains.data.Claim;
 import net.phoenixvine.domains.data.ClaimFlag;
-import net.phoenixvine.guilds.GuildAPI;
-import net.phoenixvine.guilds.data.Guild;
-import net.phoenixvine.guilds.data.GuildManager;
-import net.phoenixvine.guilds.data.GuildRank;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public final class ClaimPermissions {
@@ -20,11 +15,7 @@ public final class ClaimPermissions {
     }
 
     public static boolean isAllied(ServerPlayer player, Claim claim) {
-        GuildManager mgr = GuildManager.get(player.getServer().overworld());
-        Optional<Guild> ownerGuild = mgr.getGuildById(claim.getOwner());
-        if (ownerGuild.isEmpty()) return false;
-        Optional<Guild> playerGuild = mgr.getGuildFor(player.getUUID());
-        return playerGuild.isPresent() && ownerGuild.get().isAlly(playerGuild.get().getId());
+        return DomainOwnership.isAllied(player, claim.getOwner());
     }
 
     public static boolean canBuild(ServerPlayer player, Claim claim) {
@@ -50,6 +41,6 @@ public final class ClaimPermissions {
         UUID myToken = DomainOwnership.tokenFor(player.getUUID());
         if (!myToken.equals(ownerToken)) return false;
         if (player.getUUID().equals(ownerToken)) return true;
-        return GuildAPI.hasRank(player.getUUID(), GuildRank.OFFICER);
+        return DomainOwnership.hasManageRank(player.getUUID());
     }
 }

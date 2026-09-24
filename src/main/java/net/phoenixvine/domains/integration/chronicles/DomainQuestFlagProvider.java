@@ -1,8 +1,9 @@
 package net.phoenixvine.domains.integration.chronicles;
 
 import net.minecraft.server.MinecraftServer;
-import net.phoenixvine.chronicles.flag.FlagExpression;
-import net.phoenixvine.chronicles.flag.QuestFlagProvider;
+
+import net.phoenixvine.chronicles.common.flag.FlagExpression;
+import net.phoenixvine.chronicles.common.flag.QuestFlagProvider;
 import net.phoenixvine.domains.data.DomainManager;
 
 import javax.annotation.Nullable;

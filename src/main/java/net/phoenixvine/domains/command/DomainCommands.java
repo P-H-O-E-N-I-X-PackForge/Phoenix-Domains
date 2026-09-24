@@ -15,8 +15,6 @@ import net.phoenixvine.domains.data.Claim;
 import net.phoenixvine.domains.data.ClaimFlag;
 import net.phoenixvine.domains.data.DomainManager;
 import net.phoenixvine.domains.ownership.DomainOwnership;
-import net.phoenixvine.guilds.data.Guild;
-import net.phoenixvine.guilds.data.GuildManager;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -164,13 +162,12 @@ public class DomainCommands {
 
     private static int grantGuildByName(CommandSourceStack source, String guildName, long amount,
                                         boolean claimPower) {
-        GuildManager mgr = GuildManager.get(source.getServer().overworld());
-        Optional<Guild> guild = mgr.getGuildByName(guildName);
-        if (guild.isEmpty()) {
-            source.sendFailure(Component.literal("§cGuild '§f" + guildName + "§c' not found."));
+        Optional<UUID> token = DomainOwnership.tokenByName(source.getServer(), guildName);
+        if (token.isEmpty()) {
+            source.sendFailure(Component.literal("§cGuild/team '§f" + guildName + "§c' not found."));
             return 0;
         }
-        return grantToken(source, guild.get().getId(), amount, claimPower);
+        return grantToken(source, token.get(), amount, claimPower);
     }
 
     private static int grantToken(CommandSourceStack source, UUID token, long amount, boolean claimPower) {

@@ -13,15 +13,15 @@ Phoenix Domains adds chunk-based land claiming with chunkloading.
 
 ## Chunkloading
 
-Chunkloaded claims stay simulated even when you're offline or far away - shown solid gold on the
+Chunkloaded claims stay simulated even when you're offline or far away. Shown solid gold on the
 map. Both claim blocks and chunkload blocks are limited resources tracked in the sidebar.
 
 ## Claim colors
 
-Each player's claims show in their own color; allied guilds (if Phoenix Guilds is installed) can
-share claim visibility and permissions.
+Each player's claims show in their own color; guilds or FTB Teams share claim visibility and
+permissions with their members, and allied guilds (if Phoenix Guilds is installed) can too.
 
 ## Theme
 
-Phoenix Domains shares its color theme with every other Phoenix mod installed - use the small
+Phoenix Domains shares its color theme with every other Phoenix mod installed. Use the small
 **Theme** link above the claim map to customize it, and it applies everywhere at once.
