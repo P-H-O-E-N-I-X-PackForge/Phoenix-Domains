@@ -9,15 +9,14 @@ import net.phoenixvine.domains.data.ClaimPower;
 import net.phoenixvine.domains.ownership.ClaimPermissions;
 import net.phoenixvine.domains.ownership.DomainOwnership;
 
-import dev.latvian.mods.kubejs.KubeJSPlugin;
-import dev.latvian.mods.kubejs.script.BindingsEvent;
-import dev.latvian.mods.kubejs.script.ScriptType;
-import dev.latvian.mods.kubejs.util.ClassFilter;
+import dev.latvian.mods.kubejs.plugin.ClassFilter;
+import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
+import dev.latvian.mods.kubejs.script.BindingRegistry;
 
-public class DomainsKubeJSPlugin extends KubeJSPlugin {
+public class DomainsKubeJSPlugin implements KubeJSPlugin {
 
     @Override
-    public void registerClasses(ScriptType type, ClassFilter filter) {
+    public void registerClasses(ClassFilter filter) {
         filter.allow(DomainAPI.class);
         filter.allow(DomainFeatureState.class);
         filter.allow(ChunkKey.class);
@@ -29,9 +28,9 @@ public class DomainsKubeJSPlugin extends KubeJSPlugin {
     }
 
     @Override
-    public void registerBindings(BindingsEvent event) {
-        event.add("DomainAPI", DomainAPI.class);
-        event.add("ClaimFlag", ClaimFlag.class);
-        event.add("DomainFeatureState", DomainFeatureState.class);
+    public void registerBindings(BindingRegistry registry) {
+        registry.add("DomainAPI", DomainAPI.class);
+        registry.add("ClaimFlag", ClaimFlag.class);
+        registry.add("DomainFeatureState", DomainFeatureState.class);
     }
 }

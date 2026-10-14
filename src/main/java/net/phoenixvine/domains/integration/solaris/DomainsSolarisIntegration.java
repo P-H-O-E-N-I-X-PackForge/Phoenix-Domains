@@ -2,7 +2,7 @@ package net.phoenixvine.domains.integration.solaris;
 
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public final class DomainsSolarisIntegration {
 

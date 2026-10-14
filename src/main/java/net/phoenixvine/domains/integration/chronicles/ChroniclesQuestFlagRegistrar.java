@@ -1,10 +1,12 @@
 package net.phoenixvine.domains.integration.chronicles;
 
+import net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags;
+
 public final class ChroniclesQuestFlagRegistrar {
 
     private ChroniclesQuestFlagRegistrar() {}
 
     public static void register() {
-        net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags.registerProvider(new DomainQuestFlagProvider());
+        PhoenixQuestFlags.registerProvider(new DomainQuestFlagProvider());
     }
 }

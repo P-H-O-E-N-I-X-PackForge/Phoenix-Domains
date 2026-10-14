@@ -6,11 +6,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.phoenixvine.domains.client.ClientDomainCache;
 import net.phoenixvine.domains.network.C2SDomainActionPacket;
-import net.phoenixvine.domains.network.DomainNetwork;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
 import net.phoenixvine.solaris.client.SolarisThemeUtils;
 import net.phoenixvine.solaris.client.render.MapTileCache;
@@ -69,7 +68,8 @@ public class SolarisClaimMapScreen extends Screen {
                     frameCenterY - mc.player.getZ() * viewport.getZoom());
         }
 
-        DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.requestSync(SolarisConfig.MAP_RADIUS_CHUNKS.get()));
+        net.neoforged.neoforge.network.PacketDistributor
+                .sendToServer(C2SDomainActionPacket.requestSync(SolarisConfig.MAP_RADIUS_CHUNKS.get()));
     }
 
     @Override
@@ -86,7 +86,7 @@ public class SolarisClaimMapScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
-        renderBackground(g);
+        renderBackground(g, mx, my, partialTick);
 
         VanillaPanel.draw(g, frameX - 8, frameY - 8, frameW + 16, frameH + 16, SolarisThemeUtils.C_BORDER);
         g.enableScissor(frameX, frameY, frameX + frameW, frameY + frameH);
@@ -336,13 +336,15 @@ public class SolarisClaimMapScreen extends Screen {
         S2CDomainSyncPacket.ClaimEntry entry = ClientDomainCache.entryAt(cx, cz);
         if (shift) {
             if (entry == null) {
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.claim(cx, cz));
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(cx, cz, true));
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(C2SDomainActionPacket.claim(cx, cz));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.setChunkloaded(cx, cz, true));
             } else {
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(cx, cz, true));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.setChunkloaded(cx, cz, true));
             }
         } else if (entry == null) {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.claim(cx, cz));
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(C2SDomainActionPacket.claim(cx, cz));
         }
     }
 
@@ -358,9 +360,10 @@ public class SolarisClaimMapScreen extends Screen {
         S2CDomainSyncPacket.ClaimEntry entry = ClientDomainCache.entryAt(cx, cz);
         if (entry == null) return;
         if (shift) {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(cx, cz, false));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(C2SDomainActionPacket.setChunkloaded(cx, cz, false));
         } else {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.unclaim(cx, cz));
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(C2SDomainActionPacket.unclaim(cx, cz));
         }
     }
 
@@ -426,8 +429,8 @@ public class SolarisClaimMapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
-        return viewport.adjustZoomToAnchor(delta, mx, my, 0, 0) || super.mouseScrolled(mx, my, delta);
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
+        return viewport.adjustZoomToAnchor(delta, mx, my, 0, 0) || super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     @Override

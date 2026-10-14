@@ -9,19 +9,19 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.event.entity.EntityMobGriefingEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.MobSpawnEvent;
-import net.minecraftforge.event.entity.player.FillBucketEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.level.ExplosionEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.phys.HitResult;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.data.ChunkKey;
 import net.phoenixvine.domains.data.Claim;
@@ -32,7 +32,7 @@ import net.phoenixvine.domains.ownership.DomainOwnership;
 
 import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class ClaimProtectionEvents {
 
     @SubscribeEvent
@@ -83,21 +83,31 @@ public class ClaimProtectionEvents {
         });
     }
 
+    /**
+     * Filling or emptying a bucket in a claim the player cannot build in. 1.21 has no bucket event, so the bucket use
+     * is caught on right click and the block it would act on is found the same way the game does.
+     */
     @SubscribeEvent
-    public static void onFillBucket(FillBucketEvent event) {
+    public static void onBucketUse(PlayerInteractEvent.RightClickItem event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!(event.getTarget() instanceof BlockHitResult hit)) return;
+        if (!(event.getItemStack().getItem() instanceof BucketItem)) return;
 
-        claimAt(event.getLevel(), hit.getBlockPos()).ifPresent(claim -> {
-            if (!ClaimPermissions.canBuild(player, claim)) {
+        HitResult hit = player.pick(player.blockInteractionRange(), 0f, true);
+        if (!(hit instanceof BlockHitResult blockHit) || hit.getType() == HitResult.Type.MISS) return;
+
+        for (BlockPos target : new BlockPos[] { blockHit.getBlockPos(),
+                blockHit.getBlockPos().relative(blockHit.getDirection()) }) {
+            var claim = claimAt(event.getLevel(), target);
+            if (claim.isPresent() && !ClaimPermissions.canBuild(player, claim.get())) {
                 event.setCanceled(true);
-                notifyBlocked(player, claim);
+                notifyBlocked(player, claim.get());
+                return;
             }
-        });
+        }
     }
 
     @SubscribeEvent
-    public static void onLivingAttack(LivingAttackEvent event) {
+    public static void onLivingAttack(LivingIncomingDamageEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
         LivingEntity victim = event.getEntity();
 
@@ -132,7 +142,7 @@ public class ClaimProtectionEvents {
         Entity entity = event.getEntity();
         if (entity == null) return;
         claimAt(entity.level(), entity.blockPosition()).ifPresent(claim -> {
-            if (!claim.getFlag(ClaimFlag.MOB_GRIEFING)) event.setResult(Event.Result.DENY);
+            if (!claim.getFlag(ClaimFlag.MOB_GRIEFING)) event.setCanGrief(false);
         });
     }
 
@@ -142,7 +152,7 @@ public class ClaimProtectionEvents {
         claimAt(level, event.getPos()).ifPresent(claim -> {
             MobCategory category = event.getEntityType().getCategory();
             ClaimFlag flag = category == MobCategory.MONSTER ? ClaimFlag.HOSTILE_SPAWNING : ClaimFlag.PASSIVE_SPAWNING;
-            if (!claim.getFlag(flag)) event.setResult(Event.Result.DENY);
+            if (!claim.getFlag(flag)) event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
         });
     }
 

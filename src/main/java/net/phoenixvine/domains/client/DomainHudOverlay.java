@@ -5,12 +5,12 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.client.map.ClaimMapScreen;
 import net.phoenixvine.domains.config.DomainsClientConfig;
@@ -23,10 +23,9 @@ import net.phoenixvine.domains.integration.xaero.DomainsXaeroMinimapIntegration;
 import net.phoenixvine.domains.integration.xaero.DomainsXaeroWorldMapIntegration;
 import net.phoenixvine.domains.integration.xaero.XaeroEmbeddedClaimScreen;
 import net.phoenixvine.domains.network.C2SDomainActionPacket;
-import net.phoenixvine.domains.network.DomainNetwork;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
 
-@Mod.EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class DomainHudOverlay {
 
     private static final int SYNC_INTERVAL_TICKS = 40;
@@ -43,8 +42,7 @@ public class DomainHudOverlay {
     private static boolean journeyMapEmbedBroken = false;
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
@@ -95,7 +93,7 @@ public class DomainHudOverlay {
 
         if (++tickCounter < SYNC_INTERVAL_TICKS) return;
         tickCounter = 0;
-        DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.requestSync(SYNC_RADIUS));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(C2SDomainActionPacket.requestSync(SYNC_RADIUS));
     }
 
     public static void openClaimMap() {
@@ -176,8 +174,8 @@ public class DomainHudOverlay {
     }
 
     @SubscribeEvent
-    public static void onRenderHud(RenderGuiOverlayEvent.Post event) {
-        if (event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) return;
+    public static void onRenderHud(RenderGuiLayerEvent.Post event) {
+        if (!event.getName().equals(VanillaGuiLayers.HOTBAR)) return;
         if (!DomainsClientConfig.SHOW_HUD.get()) return;
 
         Minecraft mc = Minecraft.getInstance();

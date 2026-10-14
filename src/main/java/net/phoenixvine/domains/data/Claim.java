@@ -84,7 +84,7 @@ public class Claim {
     }
 
     public static Claim deserialize(CompoundTag tag) {
-        ResourceLocation dim = new ResourceLocation(tag.getString("dim"));
+        ResourceLocation dim = ResourceLocation.parse(tag.getString("dim"));
         ChunkKey key = new ChunkKey(dim, tag.getInt("x"), tag.getInt("z"));
         Claim claim = new Claim(key, tag.getUUID("owner"));
         claim.claimedAt = tag.getLong("claimedAt");

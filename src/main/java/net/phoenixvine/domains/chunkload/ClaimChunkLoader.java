@@ -4,7 +4,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraftforge.common.world.ForgeChunkManager;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
+import net.neoforged.neoforge.common.world.chunk.TicketController;
+import net.neoforged.neoforge.common.world.chunk.TicketHelper;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.data.ChunkKey;
 import net.phoenixvine.domains.data.Claim;
@@ -14,23 +17,26 @@ import java.util.Optional;
 
 public final class ClaimChunkLoader {
 
+    private static final TicketController CONTROLLER = new TicketController(
+            ResourceLocation.fromNamespaceAndPath(PhoenixDomains.MOD_ID, "claims"), ClaimChunkLoader::validateTickets);
+
     private ClaimChunkLoader() {}
 
-    public static void register() {
-        ForgeChunkManager.setForcedChunkLoadingCallback(PhoenixDomains.MOD_ID, ClaimChunkLoader::validateTickets);
+    public static void register(IEventBus modEventBus) {
+        modEventBus.addListener((RegisterTicketControllersEvent event) -> event.register(CONTROLLER));
     }
 
-    private static void validateTickets(ServerLevel level, ForgeChunkManager.TicketHelper helper) {
+    private static void validateTickets(ServerLevel level, TicketHelper helper) {
         DomainManager manager = DomainManager.get(level.getServer().overworld());
         ResourceLocation dim = level.dimension().location();
 
-        helper.getBlockTickets().forEach((owner, pair) -> {
-            for (long packed : pair.getFirst()) validateChunk(helper, manager, dim, owner, packed, true);
-            for (long packed : pair.getSecond()) validateChunk(helper, manager, dim, owner, packed, false);
+        helper.getBlockTickets().forEach((owner, tickets) -> {
+            for (long packed : tickets.ticking()) validateChunk(helper, manager, dim, owner, packed, true);
+            for (long packed : tickets.nonTicking()) validateChunk(helper, manager, dim, owner, packed, false);
         });
     }
 
-    private static void validateChunk(ForgeChunkManager.TicketHelper helper, DomainManager manager,
+    private static void validateChunk(TicketHelper helper, DomainManager manager,
                                       ResourceLocation dim, BlockPos owner, long packed, boolean ticking) {
         ChunkPos pos = new ChunkPos(packed);
         ChunkKey key = new ChunkKey(dim, pos.x, pos.z);
@@ -42,6 +48,6 @@ public final class ClaimChunkLoader {
 
     public static void setChunkForced(ServerLevel level, ChunkKey key, boolean forced) {
         BlockPos owner = new BlockPos(key.x(), 0, key.z());
-        ForgeChunkManager.forceChunk(level, PhoenixDomains.MOD_ID, owner, key.x(), key.z(), forced, true);
+        CONTROLLER.forceChunk(level, owner, key.x(), key.z(), forced, true);
     }
 }

@@ -2,16 +2,26 @@ package net.phoenixvine.domains.network;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.phoenixvine.domains.client.ClientDomainCache;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
-public class S2CDomainSyncPacket {
+public class S2CDomainSyncPacket implements CustomPacketPayload {
+
+    public static final Type<S2CDomainSyncPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_domains", "sync"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, S2CDomainSyncPacket> STREAM_CODEC = StreamCodec
+            .ofMember(S2CDomainSyncPacket::encode, S2CDomainSyncPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     public record ClaimEntry(int x, int z, String ownerName, int color, boolean chunkloaded) {}
 
@@ -73,9 +83,8 @@ public class S2CDomainSyncPacket {
         buf.writeLong(usedChunkloadBlocks);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> applyOnClient(this)));
-        ctx.get().setPacketHandled(true);
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> applyOnClient(this));
     }
 
     private static void applyOnClient(S2CDomainSyncPacket pkt) {

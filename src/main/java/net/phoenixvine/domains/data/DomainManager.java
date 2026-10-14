@@ -1,5 +1,6 @@
 package net.phoenixvine.domains.data;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -17,6 +18,9 @@ import java.util.UUID;
 
 public class DomainManager extends SavedData {
 
+    private static final SavedData.Factory<DomainManager> FACTORY = new SavedData.Factory<>(DomainManager::new,
+            DomainManager::load);
+
     private static final String SAVE_KEY = "phoenix_domains";
 
     private static final int DATA_VERSION = 1;
@@ -26,10 +30,10 @@ public class DomainManager extends SavedData {
     private final Map<UUID, ClaimPower> powers = new HashMap<>();
 
     public static DomainManager get(ServerLevel overworld) {
-        return overworld.getDataStorage().computeIfAbsent(DomainManager::load, DomainManager::new, SAVE_KEY);
+        return overworld.getDataStorage().computeIfAbsent(FACTORY, SAVE_KEY);
     }
 
-    private static DomainManager load(CompoundTag tag) {
+    private static DomainManager load(CompoundTag tag, HolderLookup.Provider provider) {
         DomainManager mgr = new DomainManager();
         int version = tag.contains("dataVersion") ? tag.getInt("dataVersion") : 0;
 
@@ -60,7 +64,7 @@ public class DomainManager extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag) {
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putInt("dataVersion", DATA_VERSION);
         ListTag claimList = new ListTag();
         for (Claim claim : claims.values()) claimList.add(claim.serialize());

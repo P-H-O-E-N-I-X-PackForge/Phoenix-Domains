@@ -7,7 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.chunkload.ClaimChunkLoader;
 import net.phoenixvine.domains.config.DomainsConfig;

@@ -2,7 +2,6 @@ package net.phoenixvine.domains.integration.claimclick;
 
 import net.phoenixvine.domains.client.ClientDomainCache;
 import net.phoenixvine.domains.network.C2SDomainActionPacket;
-import net.phoenixvine.domains.network.DomainNetwork;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
 
 public final class ClaimClickActions {
@@ -14,21 +13,26 @@ public final class ClaimClickActions {
         if (chunkloadToggle) {
             if (claim) {
                 if (entry == null) {
-                    DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.claim(chunkX, chunkZ));
+                    net.neoforged.neoforge.network.PacketDistributor
+                            .sendToServer(C2SDomainActionPacket.claim(chunkX, chunkZ));
                 }
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(chunkX, chunkZ, true));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.setChunkloaded(chunkX, chunkZ, true));
             } else if (entry != null) {
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(chunkX, chunkZ, false));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.setChunkloaded(chunkX, chunkZ, false));
             }
             return;
         }
 
         if (claim) {
             if (entry == null) {
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.claim(chunkX, chunkZ));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.claim(chunkX, chunkZ));
             }
         } else if (entry != null) {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.unclaim(chunkX, chunkZ));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(C2SDomainActionPacket.unclaim(chunkX, chunkZ));
         }
     }
 }

@@ -1,17 +1,17 @@
 package net.phoenixvine.domains.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class DomainsClientConfig {
 
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.BooleanValue SHOW_HUD;
+    public static final ModConfigSpec.BooleanValue SHOW_HUD;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         builder.push("hud");
         SHOW_HUD = builder
@@ -25,7 +25,7 @@ public final class DomainsClientConfig {
 
     private DomainsClientConfig() {}
 
-    public static void register() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, SPEC);
+    public static void register(ModContainer container) {
+        container.registerConfig(ModConfig.Type.CLIENT, SPEC);
     }
 }

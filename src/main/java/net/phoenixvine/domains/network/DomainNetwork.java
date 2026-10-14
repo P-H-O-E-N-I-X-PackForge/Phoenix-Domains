@@ -3,10 +3,9 @@ package net.phoenixvine.domains.network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.api.DomainAPI;
 import net.phoenixvine.domains.data.ChunkKey;
@@ -20,30 +19,14 @@ import java.util.List;
 public class DomainNetwork {
 
     private static final String PROTOCOL = "1";
-    public static SimpleChannel CHANNEL;
 
-    private static int id = 0;
-
-    public static void init() {
-        CHANNEL = NetworkRegistry.newSimpleChannel(
-                new ResourceLocation(PhoenixDomains.MOD_ID, "main"),
-                () -> PROTOCOL,
-                PROTOCOL::equals,
-                PROTOCOL::equals);
-
-        CHANNEL.registerMessage(id++,
-                C2SDomainActionPacket.class,
-                C2SDomainActionPacket::encode,
-                C2SDomainActionPacket::new,
-                C2SDomainActionPacket::handle,
-                java.util.Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                S2CDomainSyncPacket.class,
-                S2CDomainSyncPacket::encode,
-                S2CDomainSyncPacket::new,
-                S2CDomainSyncPacket::handle,
-                java.util.Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    /** Registers the packets; hooked to the mod bus from {@code PhoenixDomains}. */
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(PROTOCOL);
+        registrar.playToServer(C2SDomainActionPacket.TYPE, C2SDomainActionPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2CDomainSyncPacket.TYPE, S2CDomainSyncPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
     }
 
     public static void sendSync(ServerPlayer player, int radius) {
@@ -71,7 +54,7 @@ public class DomainNetwork {
 
         S2CDomainSyncPacket packet = new S2CDomainSyncPacket(entries, centerX, centerZ, clamped, availClaim,
                 power.getClaimsUsed(), availChunkload, power.getChunkloadsUsed());
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        PacketDistributor.sendToPlayer(player, packet);
     }
 
     private static S2CDomainSyncPacket.ClaimEntry toEntry(Claim claim) {

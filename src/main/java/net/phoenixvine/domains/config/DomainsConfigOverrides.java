@@ -1,8 +1,8 @@
 package net.phoenixvine.domains.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import net.phoenixvine.domains.PhoenixDomains;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
@@ -61,7 +61,7 @@ public final class DomainsConfigOverrides {
         }
 
         try {
-            Map<String, ForgeConfigSpec.ConfigValue<?>> valuesByPath = collectConfigValues();
+            Map<String, ModConfigSpec.ConfigValue<?>> valuesByPath = collectConfigValues();
             applyOverrides(overrideConfig, new ArrayDeque<>(), valuesByPath);
         } catch (Exception e) {
             LOGGER.warn("[{}] Unexpected error applying global config overrides from '{}' — some or all " +
@@ -73,7 +73,7 @@ public final class DomainsConfigOverrides {
     }
 
     private static void applyOverrides(UnmodifiableConfig node, Deque<String> pathSoFar,
-                                       Map<String, ForgeConfigSpec.ConfigValue<?>> valuesByPath) {
+                                       Map<String, ModConfigSpec.ConfigValue<?>> valuesByPath) {
         for (Map.Entry<String, Object> entry : node.valueMap().entrySet()) {
             Object rawValue = entry.getValue();
             pathSoFar.addLast(entry.getKey());
@@ -91,8 +91,8 @@ public final class DomainsConfigOverrides {
     }
 
     private static void applyLeaf(String dottedPath, Object rawValue,
-                                  Map<String, ForgeConfigSpec.ConfigValue<?>> valuesByPath) {
-        ForgeConfigSpec.ConfigValue<?> configValue = valuesByPath.get(dottedPath);
+                                  Map<String, ModConfigSpec.ConfigValue<?>> valuesByPath) {
+        ModConfigSpec.ConfigValue<?> configValue = valuesByPath.get(dottedPath);
         if (configValue == null) {
             LOGGER.warn("[{}] '{}' has override key '{}' which does not match any known {} config path — " +
                     "ignoring it (check for a typo).", PhoenixDomains.MOD_ID, OVERRIDE_FILE_NAME, dottedPath,
@@ -157,10 +157,10 @@ public final class DomainsConfigOverrides {
                 (defaultValue == null ? "null" : defaultValue.getClass()));
     }
 
-    private static void setCachedValue(ForgeConfigSpec.ConfigValue<?> configValue, Object value)
-                                                                                                 throws ReflectiveOperationException {
+    private static void setCachedValue(ModConfigSpec.ConfigValue<?> configValue, Object value)
+                                                                                               throws ReflectiveOperationException {
         if (cachedValueField == null) {
-            Field field = ForgeConfigSpec.ConfigValue.class.getDeclaredField("cachedValue");
+            Field field = ModConfigSpec.ConfigValue.class.getDeclaredField("cachedValue");
             field.setAccessible(true);
             cachedValueField = field;
         }
@@ -182,13 +182,13 @@ public final class DomainsConfigOverrides {
         CommentedFileConfig fileConfig = CommentedFileConfig.builder(overridePath).sync().build();
         try {
             UnmodifiableConfig specTree = DomainsConfig.SPEC.getSpec();
-            Map<String, ForgeConfigSpec.ConfigValue<?>> valuesByPath = collectConfigValues();
-            for (ForgeConfigSpec.ConfigValue<?> configValue : valuesByPath.values()) {
+            Map<String, ModConfigSpec.ConfigValue<?>> valuesByPath = collectConfigValues();
+            for (ModConfigSpec.ConfigValue<?> configValue : valuesByPath.values()) {
                 List<String> path = configValue.getPath();
                 fileConfig.set(path, configValue.getDefault());
 
                 Object specNode = specTree.get(path);
-                if (specNode instanceof ForgeConfigSpec.ValueSpec valueSpec && valueSpec.getComment() != null) {
+                if (specNode instanceof ModConfigSpec.ValueSpec valueSpec && valueSpec.getComment() != null) {
                     fileConfig.setComment(path, valueSpec.getComment());
                 }
             }
@@ -235,17 +235,17 @@ public final class DomainsConfigOverrides {
         Files.write(overridePath, combined);
     }
 
-    private static Map<String, ForgeConfigSpec.ConfigValue<?>> collectConfigValues() throws IllegalAccessException {
-        Map<String, ForgeConfigSpec.ConfigValue<?>> result = new HashMap<>();
+    private static Map<String, ModConfigSpec.ConfigValue<?>> collectConfigValues() throws IllegalAccessException {
+        Map<String, ModConfigSpec.ConfigValue<?>> result = new HashMap<>();
         for (Field field : DomainsConfig.class.getDeclaredFields()) {
             if (!Modifier.isStatic(field.getModifiers()) || !Modifier.isPublic(field.getModifiers())) {
                 continue;
             }
-            if (!ForgeConfigSpec.ConfigValue.class.isAssignableFrom(field.getType())) {
+            if (!ModConfigSpec.ConfigValue.class.isAssignableFrom(field.getType())) {
                 continue;
             }
             field.setAccessible(true);
-            ForgeConfigSpec.ConfigValue<?> configValue = (ForgeConfigSpec.ConfigValue<?>) field.get(null);
+            ModConfigSpec.ConfigValue<?> configValue = (ModConfigSpec.ConfigValue<?>) field.get(null);
             if (configValue == null) {
                 continue;
             }

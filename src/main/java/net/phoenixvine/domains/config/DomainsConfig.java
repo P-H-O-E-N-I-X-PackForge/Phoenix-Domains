@@ -1,27 +1,27 @@
 package net.phoenixvine.domains.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class DomainsConfig {
 
-    public static final ForgeConfigSpec SPEC;
+    public static final ModConfigSpec SPEC;
 
-    public static final ForgeConfigSpec.IntValue CLAIM_POWER_BASE;
-    public static final ForgeConfigSpec.DoubleValue CLAIM_POWER_PER_HOUR;
-    public static final ForgeConfigSpec.DoubleValue CLAIM_POWER_MAX_ACCRUAL;
+    public static final ModConfigSpec.IntValue CLAIM_POWER_BASE;
+    public static final ModConfigSpec.DoubleValue CLAIM_POWER_PER_HOUR;
+    public static final ModConfigSpec.DoubleValue CLAIM_POWER_MAX_ACCRUAL;
 
-    public static final ForgeConfigSpec.IntValue CHUNKLOAD_POWER_BASE;
-    public static final ForgeConfigSpec.DoubleValue CHUNKLOAD_POWER_PER_HOUR;
-    public static final ForgeConfigSpec.DoubleValue CHUNKLOAD_POWER_MAX_ACCRUAL;
+    public static final ModConfigSpec.IntValue CHUNKLOAD_POWER_BASE;
+    public static final ModConfigSpec.DoubleValue CHUNKLOAD_POWER_PER_HOUR;
+    public static final ModConfigSpec.DoubleValue CHUNKLOAD_POWER_MAX_ACCRUAL;
 
-    public static final ForgeConfigSpec.IntValue MAX_CLAIM_DISTANCE_CHUNKS;
-    public static final ForgeConfigSpec.IntValue MAX_CLAIMED_CHUNKS_PER_OWNER;
-    public static final ForgeConfigSpec.IntValue MAX_FORCELOADED_CHUNKS_PER_OWNER;
+    public static final ModConfigSpec.IntValue MAX_CLAIM_DISTANCE_CHUNKS;
+    public static final ModConfigSpec.IntValue MAX_CLAIMED_CHUNKS_PER_OWNER;
+    public static final ModConfigSpec.IntValue MAX_FORCELOADED_CHUNKS_PER_OWNER;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         builder.push("claim_power");
         CLAIM_POWER_BASE = builder
@@ -70,7 +70,7 @@ public final class DomainsConfig {
 
     private DomainsConfig() {}
 
-    public static void register() {
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SPEC);
+    public static void register(ModContainer container) {
+        container.registerConfig(ModConfig.Type.SERVER, SPEC);
     }
 }

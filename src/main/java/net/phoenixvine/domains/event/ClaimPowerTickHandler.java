@@ -2,10 +2,10 @@ package net.phoenixvine.domains.event;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.config.DomainsConfig;
 import net.phoenixvine.domains.data.ClaimPower;
@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = PhoenixDomains.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class ClaimPowerTickHandler {
 
     private static final int ACCRUAL_INTERVAL_TICKS = 1200;
@@ -24,9 +24,7 @@ public class ClaimPowerTickHandler {
     private static int tickCounter = 0;
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-
+    public static void onServerTick(ServerTickEvent.Post event) {
         if (++tickCounter < ACCRUAL_INTERVAL_TICKS) return;
         tickCounter = 0;
 

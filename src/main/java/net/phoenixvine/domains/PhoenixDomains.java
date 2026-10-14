@@ -1,13 +1,12 @@
 package net.phoenixvine.domains;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.phoenixvine.domains.chunkload.ClaimChunkLoader;
 import net.phoenixvine.domains.client.PhoenixDomainsClient;
 import net.phoenixvine.domains.config.DomainsClientConfig;
@@ -26,28 +25,26 @@ public class PhoenixDomains {
     public static final String MOD_ID = "phoenix_domains";
     public static final Logger LOGGER = LogManager.getLogger();
 
-    public PhoenixDomains() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
-        DomainsConfig.register();
-        DomainsClientConfig.register();
+    public PhoenixDomains(IEventBus modEventBus, ModContainer container) {
+        DomainsConfig.register(container);
+        DomainsClientConfig.register(container);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onConfigLoad);
         modEventBus.addListener(this::onConfigReload);
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> PhoenixDomainsClient.init(modEventBus));
+        modEventBus.addListener(DomainNetwork::register);
+        ClaimChunkLoader.register(modEventBus);
+
+        if (FMLEnvironment.dist.isClient()) PhoenixDomainsClient.init(modEventBus);
     }
 
     public static ResourceLocation id(String path) {
-        return new ResourceLocation(MOD_ID, path);
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            DomainNetwork.init();
-            ClaimChunkLoader.register();
-
             if (DomainsChroniclesIntegration.isAvailable()) {
                 try {
                     ChroniclesQuestFlagRegistrar.register();

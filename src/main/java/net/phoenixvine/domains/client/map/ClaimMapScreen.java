@@ -11,12 +11,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.MapColor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.phoenixvine.domains.client.ClientDomainCache;
 import net.phoenixvine.domains.client.DomainsThemePalette;
 import net.phoenixvine.domains.network.C2SDomainActionPacket;
-import net.phoenixvine.domains.network.DomainNetwork;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
 import net.phoenixvine.wiki.PhoenixWikiAPI;
 import net.phoenixvine.wiki.client.screen.WikiTheme;
@@ -101,14 +100,14 @@ public class ClaimMapScreen extends Screen {
         if (cx == centerChunkX && cz == centerChunkZ) return;
         centerChunkX = cx;
         centerChunkZ = cz;
-        DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.requestSync(radius));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(C2SDomainActionPacket.requestSync(radius));
     }
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         DomainsThemePalette.refresh();
         recenterOnPlayer();
-        renderBackground(g);
+        renderBackground(g, mx, my, partialTick);
         panel(g, gridPx - 4, gridPy - 4, gridSize + 8, gridSize + 8);
 
         Level level = Minecraft.getInstance().level;
@@ -342,13 +341,17 @@ public class ClaimMapScreen extends Screen {
         S2CDomainSyncPacket.ClaimEntry entry = ClientDomainCache.entryAt(hoveredX, hoveredZ);
         if (shift) {
             if (entry == null) {
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.claim(hoveredX, hoveredZ));
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(hoveredX, hoveredZ, true));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.claim(hoveredX, hoveredZ));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.setChunkloaded(hoveredX, hoveredZ, true));
             } else {
-                DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(hoveredX, hoveredZ, true));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(C2SDomainActionPacket.setChunkloaded(hoveredX, hoveredZ, true));
             }
         } else if (entry == null) {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.claim(hoveredX, hoveredZ));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(C2SDomainActionPacket.claim(hoveredX, hoveredZ));
         }
     }
 
@@ -360,9 +363,11 @@ public class ClaimMapScreen extends Screen {
         S2CDomainSyncPacket.ClaimEntry entry = ClientDomainCache.entryAt(hoveredX, hoveredZ);
         if (entry == null) return;
         if (shift) {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.setChunkloaded(hoveredX, hoveredZ, false));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(C2SDomainActionPacket.setChunkloaded(hoveredX, hoveredZ, false));
         } else {
-            DomainNetwork.CHANNEL.sendToServer(C2SDomainActionPacket.unclaim(hoveredX, hoveredZ));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(C2SDomainActionPacket.unclaim(hoveredX, hoveredZ));
         }
     }
 

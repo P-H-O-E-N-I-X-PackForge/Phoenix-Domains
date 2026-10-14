@@ -2,7 +2,7 @@ package net.phoenixvine.domains.ownership;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 import java.awt.Color;
 import java.util.Optional;
