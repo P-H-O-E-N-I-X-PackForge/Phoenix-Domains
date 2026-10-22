@@ -188,8 +188,8 @@ dependencies {
 
    modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.8")
 
-    modCompileOnly'net.phoenixvine.solaris:solaris:1.6'
-    modRuntimeOnly'net.phoenixvine.solaris:solaris:1.6'
+    modCompileOnly 'curse.maven:solaris-map-1622856:9283556'
+    modRuntimeOnly 'curse.maven:solaris-map-1622856:9283556'
 
     modCompileOnly 'net.phoenixvine.chronicles:phoenix_chronicles:7.0.4'
     modRuntimeOnly 'net.phoenixvine.chronicles:phoenix_chronicles:7.0.4'
