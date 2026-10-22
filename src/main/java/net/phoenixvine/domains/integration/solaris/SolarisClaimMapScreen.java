@@ -24,6 +24,9 @@ import net.phoenixvine.wiki.theme.PhoenixThemeEditorScreen;
 @OnlyIn(Dist.CLIENT)
 public class SolarisClaimMapScreen extends Screen {
 
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
+
     private static final int MARGIN = 20;
     private static final int SIDEBAR_W = 150;
     private static final int LINE_H = 10;
@@ -160,9 +163,6 @@ public class SolarisClaimMapScreen extends Screen {
         }
     }
 
-    // Matches SolarisMapScreen.CHUNK_GRID_MIN_ZOOM — "die past 200" refers to Solaris's own scale
-    // bar reading (blocks = 60/zoom), not the raw zoom multiplier, so the actual cutoff is
-    // zoom < 60/200 despite this screen not drawing a scale bar of its own.
     private static final float CHUNK_GRID_MIN_ZOOM = 60f / 200f;
 
     private void drawChunkGrid(GuiGraphics g) {
@@ -173,8 +173,7 @@ public class SolarisClaimMapScreen extends Screen {
         int chunkMinX = (int) Math.floor(viewport.toWorldX(frameX, 0)) >> 4;
         int chunkMaxX = (int) Math.floor(viewport.toWorldX(frameX + frameW, 0)) >> 4;
         for (int cx = chunkMinX; cx <= chunkMaxX + 1; cx++) {
-            // Round, not truncate — matches SolarisMapScreen's drawChunkGridWorld, fixing the same
-            // grid-vs-terrain 1px drift while panning ("jiggle") that truncation caused there.
+
             int sx = (int) Math.round(viewport.toScreenX(cx << 4, 0));
             if (sx < frameX || sx > frameX + frameW) continue;
             g.fill(sx, frameY, sx + 1, frameY + frameH, gridColor);
@@ -190,8 +189,6 @@ public class SolarisClaimMapScreen extends Screen {
     }
 
     private void highlightChunk(GuiGraphics g, int cx, int cz, int outlineColor) {
-        // Matches drawChunkGrid's rounding exactly (both edges independently rounded, same as the
-        // grid's own lines) so the highlight box still lines up with the grid it's tracing.
         int x0 = (int) Math.round(viewport.toScreenX(cx << 4, 0));
         int y0 = (int) Math.round(viewport.toScreenY(cz << 4, 0));
         int x1 = (int) Math.round(viewport.toScreenX((cx + 1) << 4, 0));

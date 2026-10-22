@@ -6,7 +6,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.api.DomainAPI;
 import net.phoenixvine.domains.data.ChunkKey;
 import net.phoenixvine.domains.data.Claim;
@@ -20,7 +19,6 @@ public class DomainNetwork {
 
     private static final String PROTOCOL = "1";
 
-    /** Registers the packets; hooked to the mod bus from {@code PhoenixDomains}. */
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(PROTOCOL);
         registrar.playToServer(C2SDomainActionPacket.TYPE, C2SDomainActionPacket.STREAM_CODEC,

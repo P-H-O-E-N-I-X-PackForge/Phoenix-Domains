@@ -28,6 +28,9 @@ import java.util.Map;
 @OnlyIn(Dist.CLIENT)
 public class ClaimMapScreen extends Screen {
 
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
+
     private static final int MAX_RADIUS = 16;
     private static final int MIN_RADIUS = 4;
     private static final int MIN_CELL = 10;
@@ -160,11 +163,6 @@ public class ClaimMapScreen extends Screen {
 
     private int themeLinkX, themeLinkW, wikiLinkX, wikiLinkW, themeLinksY;
 
-    /**
-     * Rendered inside our own sidebar panel (at the given x/y), not the screen's top-left corner
-     * -- other mods' always-on-top HUD overlays (energy/status readouts, etc.) can occupy that
-     * corner and silently paint over anything drawn there.
-     */
     private void renderThemeLinks(GuiGraphics g, int mx, int my, int x, int y) {
         themeLinksY = y;
 

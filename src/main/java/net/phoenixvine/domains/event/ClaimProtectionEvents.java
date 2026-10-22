@@ -83,10 +83,6 @@ public class ClaimProtectionEvents {
         });
     }
 
-    /**
-     * Filling or emptying a bucket in a claim the player cannot build in. 1.21 has no bucket event, so the bucket use
-     * is caught on right click and the block it would act on is found the same way the game does.
-     */
     @SubscribeEvent
     public static void onBucketUse(PlayerInteractEvent.RightClickItem event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;

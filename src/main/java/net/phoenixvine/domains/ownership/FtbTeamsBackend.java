@@ -35,7 +35,6 @@ final class FtbTeamsBackend implements OwnershipBackend {
 
     @Override
     public boolean isAllied(ServerPlayer player, UUID ownerToken) {
-        // FTB Teams has no team-to-team alliance concept, so ally-gated permissions never apply here.
         return false;
     }
 

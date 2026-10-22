@@ -83,6 +83,20 @@ repositories {
             includeGroup 'curse.maven'
         }
     }
+    maven { // JourneyMap API
+        name = 'JourneyMap Maven'
+        url = 'https://jm.gserv.me/repository/maven-public/'
+        content {
+            includeGroup 'info.journeymap'
+        }
+    }
+    maven { // JourneyMap mod jar
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
     maven {
         name = 'Repsy'
         url = uri('https://repo.repsy.io/mvn/user75142941/phoenixsuite')
@@ -145,6 +159,7 @@ dependencies {
     compileOnly "net.phoenixvine.chronicles:phoenix_chronicles-neoforge:${chronicles_version}"
     compileOnly "net.phoenixvine.guilds:phoenix-guilds-neoforge:${phoenix_guilds_version}"
     compileOnly files("libs/solaris-neoforge-1.6.4.jar")
+   // localRuntime files("libs/solaris-neoforge-1.6.4.jar")
 
     // Optional integrations
     compileOnly "dev.toma.configuration:configuration-${minecraft_version}:${configuration_version}"
@@ -152,9 +167,18 @@ dependencies {
     compileOnly "dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}"
     compileOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
 
+    compileOnly "info.journeymap:journeymap-api-neoforge:${journeymap_api_version}"
+    compileOnly "maven.modrinth:journeymap:${journeymap_version}"
+    compileOnly files("libs/xaerolib-neoforge-1.21.1-1.7.3.jar")
+    compileOnly "maven.modrinth:xaeros-minimap:${xaerominimap_version}"
+    compileOnly "maven.modrinth:xaeros-world-map:${xaeroworldmap_version}"
+
     // Dev runtime
     localRuntime "net.phoenixvine.chronicles:phoenix_chronicles-neoforge:${chronicles_version}"
     localRuntime("net.phoenixvine.guilds:phoenix-guilds-neoforge:${phoenix_guilds_version}") { transitive = false }
+   localRuntime "maven.modrinth:journeymap:${journeymap_version}"
+    //localRuntime "maven.modrinth:xaeros-minimap:${xaerominimap_version}"
+  //  localRuntime "maven.modrinth:xaeros-world-map:${xaeroworldmap_version}"
     localRuntime "dev.toma.configuration:configuration-${minecraft_version}:${configuration_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'

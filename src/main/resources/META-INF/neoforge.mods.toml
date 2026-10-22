@@ -83,3 +83,6 @@ type = "optional"
 versionRange = "[0,)"
 ordering = "NONE"
 side = "BOTH"
+
+[[mixins]]
+config = "phoenix_domains.mixins.json"

@@ -18,9 +18,6 @@ public class PhoenixDomainsClient {
     }
 
     private static void clientSetup(final FMLClientSetupEvent event) {
-        // Lets the suite's shared/per-mod theme toggle (see PhoenixTheme#setSharedMode) tell this
-        // mod's own code apart from every other Phoenix mod's when they call the no-arg theme
-        // accessors -- see PhoenixTheme#resolveCallerModId.
         PhoenixTheme.registerMod("net.phoenixvine.domains", PhoenixDomains.MOD_ID);
 
         SuiteHudBar.register(PhoenixDomains.MOD_ID, SuiteHudBar.PRIORITY_DOMAINS,

@@ -1,11 +1,14 @@
 package net.phoenixvine.domains.integration.xaero;
 
-/** Interim stand-in for the Xaero's World Map integration; see {@link DomainsXaeroMinimapIntegration}. */
+import net.neoforged.fml.ModList;
+
 public final class DomainsXaeroWorldMapIntegration {
+
+    public static final String XAERO_WORLDMAP_MOD_ID = "xaeroworldmap";
 
     private DomainsXaeroWorldMapIntegration() {}
 
     public static boolean isAvailable() {
-        return false;
+        return ModList.get().isLoaded(XAERO_WORLDMAP_MOD_ID);
     }
 }

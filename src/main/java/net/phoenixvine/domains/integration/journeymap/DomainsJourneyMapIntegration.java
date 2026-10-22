@@ -1,14 +1,14 @@
 package net.phoenixvine.domains.integration.journeymap;
 
-/**
- * Interim stand-in: the JourneyMap integration has not been ported to 1.21.1 yet. The original is kept under
- * {@code src/disabled} and replaces these stubs once it is.
- */
+import net.neoforged.fml.ModList;
+
 public final class DomainsJourneyMapIntegration {
+
+    public static final String JOURNEYMAP_MOD_ID = "journeymap";
 
     private DomainsJourneyMapIntegration() {}
 
     public static boolean isAvailable() {
-        return false;
+        return ModList.get().isLoaded(JOURNEYMAP_MOD_ID);
     }
 }

@@ -1,6 +1,6 @@
 package net.phoenixvine.domains.mixin;
 
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.LoadingModList;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -25,10 +25,10 @@ public class DomainsMixinConfigPlugin implements IMixinConfigPlugin {
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (mixinClassName.equals(XAERO_MINIMAP_MIXIN)) {
-            return FMLLoader.getLoadingModList().getModFileById("xaerominimap") != null;
+            return LoadingModList.get().getModFileById("xaerominimap") != null;
         }
         if (mixinClassName.equals(XAERO_WORLDMAP_MIXIN)) {
-            return FMLLoader.getLoadingModList().getModFileById("xaeroworldmap") != null;
+            return LoadingModList.get().getModFileById("xaeroworldmap") != null;
         }
         return true;
     }

@@ -7,12 +7,12 @@ import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.client.ClientDomainCache;
 import net.phoenixvine.domains.network.S2CDomainSyncPacket;
 
-import journeymap.client.api.IClientAPI;
-import journeymap.client.api.display.DisplayType;
-import journeymap.client.api.display.PolygonOverlay;
-import journeymap.client.api.model.MapPolygon;
-import journeymap.client.api.model.ShapeProperties;
-import journeymap.client.api.util.PolygonHelper;
+import journeymap.api.v2.client.IClientAPI;
+import journeymap.api.v2.client.display.DisplayType;
+import journeymap.api.v2.client.display.PolygonOverlay;
+import journeymap.api.v2.client.model.MapPolygon;
+import journeymap.api.v2.client.model.ShapeProperties;
+import journeymap.api.v2.client.util.PolygonHelper;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,8 +80,7 @@ final class DomainClaimJourneyMapOverlay {
                 .setStrokeOpacity((TINT_ALPHA & 0xFF) / 255f);
 
         MapPolygon polygon = PolygonHelper.createChunkPolygon(entry.x(), 0, entry.z());
-        String displayId = entry.x() + "_" + entry.z();
-        PolygonOverlay overlay = new PolygonOverlay(PhoenixDomains.MOD_ID, displayId, dimension, shapeProps, polygon);
+        PolygonOverlay overlay = new PolygonOverlay(PhoenixDomains.MOD_ID, dimension, shapeProps, polygon);
         overlay.setDimension(dimension);
         overlay.setTitle(entry.ownerName());
         return overlay;
