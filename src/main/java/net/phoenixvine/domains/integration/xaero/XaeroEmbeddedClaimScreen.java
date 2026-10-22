@@ -43,6 +43,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
     private static Field cameraZField;
     private static Field scaleField;
     private static Field userScaleField;
+    private static Field destScaleField;
     private static Field mouseBlockPosXField;
     private static Field mouseBlockPosZField;
     private static Field mouseBlockDimField;
@@ -63,6 +64,8 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             scaleField.setAccessible(true);
             userScaleField = GuiMap.class.getDeclaredField("userScale");
             userScaleField.setAccessible(true);
+            destScaleField = GuiMap.class.getDeclaredField("destScale");
+            destScaleField.setAccessible(true);
             mouseBlockPosXField = GuiMap.class.getDeclaredField("mouseBlockPosX");
             mouseBlockPosXField.setAccessible(true);
             mouseBlockPosZField = GuiMap.class.getDeclaredField("mouseBlockPosZ");
@@ -139,6 +142,11 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             itemRendererField.set(guiMap, mc.getItemRenderer());
             screenWidthField.set(guiMap, this.width);
             screenHeightField.set(guiMap, this.height);
+            // GuiMap.init() normally puts the camera on the player; it is not run here
+            if (mc.player != null) {
+                cameraXField.set(guiMap, mc.player.getX());
+                cameraZField.set(guiMap, mc.player.getZ());
+            }
         } catch (ReflectiveOperationException e) {
             PhoenixDomains.LOGGER.error("Failed to initialize the puppeteered GuiMap instance — the embedded" +
                     " Xaero claim map may render incorrectly.", e);
@@ -348,6 +356,8 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             double factor = delta > 0 ? ZOOM_STEP : 1.0 / ZOOM_STEP;
             double clamped = Math.max(MIN_USER_SCALE, Math.min(MAX_USER_SCALE, userScale * factor));
             userScaleField.set(guiMap, clamped);
+            // GuiMap eases userScale toward this static every frame, so setting userScale alone gets undone
+            destScaleField.set(null, clamped);
         } catch (ReflectiveOperationException ignored) {
 
         }

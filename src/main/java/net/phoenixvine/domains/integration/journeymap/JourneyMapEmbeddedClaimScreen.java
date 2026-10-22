@@ -21,9 +21,13 @@ import net.phoenixvine.wiki.theme.PhoenixTheme;
 import net.phoenixvine.wiki.theme.PhoenixThemeEditorScreen;
 
 import journeymap.client.api.display.Context;
+import journeymap.client.JourneymapClient;
 import journeymap.client.io.FileHandler;
+import journeymap.client.model.MapState;
 import journeymap.client.model.MapType;
 import journeymap.client.render.draw.DrawUtil;
+import journeymap.client.render.draw.RadarDrawStepFactory;
+import journeymap.client.render.draw.WaypointDrawStepFactory;
 import journeymap.client.render.map.GridRenderer;
 
 import java.awt.geom.Point2D;
@@ -56,6 +60,11 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
 
     private final Screen parent;
     private GridRenderer gridRenderer;
+    private MapState mapState;
+    private final WaypointDrawStepFactory waypointFactory = new WaypointDrawStepFactory();
+    private final RadarDrawStepFactory radarFactory = new RadarDrawStepFactory();
+    private int lastClaimVersion = -1;
+    private boolean loggedOverlayFailure;
     private MapType mapType;
     private int zoom = DEFAULT_ZOOM;
     private double centerBlockX;
@@ -84,7 +93,9 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        mapType = MapType.day(mc.player.level().dimension());
+        mapState = new MapState();
+        mapState.refresh(mc, mc.player, JourneymapClient.getInstance().getFullMapProperties());
+        mapType = mapState.setMapType(MapType.day(mc.player.level().dimension()));
         centerBlockX = mc.player.getX();
         centerBlockZ = mc.player.getZ();
 
@@ -101,6 +112,30 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         while (gridSize * 512 < screenWidth) gridSize++;
         if (++gridSize % 2 == 0) gridSize++;
         return gridSize;
+    }
+
+    /**
+     * Draws what JourneyMap draws over the tiles: the claim polygons the Domains plugin shows through its API are in
+     * the map state's draw steps, not in the tiles. They also have to be prepared again when a claim is added or
+     * removed.
+     */
+    private void drawOverlays(GuiGraphics g) {
+        try {
+            if (ClientDomainCache.version != lastClaimVersion) {
+                lastClaimVersion = ClientDomainCache.version;
+                DomainJourneyMapPlugin.sync();
+                gridRenderer.updateUIState(true);
+            }
+            mapState.generateDrawSteps(minecraft, gridRenderer, waypointFactory, radarFactory,
+                    JourneymapClient.getInstance().getFullMapProperties(), false);
+            gridRenderer.draw(g, mapState.getDrawSteps(), 0.0, 0.0, 1.0, 0.0);
+            gridRenderer.draw(g, mapState.getDrawWaypointSteps(), 0.0, 0.0, 1.0, 0.0);
+        } catch (Throwable t) {
+            if (!loggedOverlayFailure) {
+                loggedOverlayFailure = true;
+                PhoenixDomains.LOGGER.error("Failed to draw the claim overlays on the embedded JourneyMap map.", t);
+            }
+        }
     }
 
     private void recenter() {
@@ -121,6 +156,7 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
             try {
                 gridRenderer.updateTiles(mapType, zoom, true, width, height, false, 0.0, 0.0);
                 gridRenderer.draw(g, 1.0f, 0.8f, 0.0, 0.0, true);
+                drawOverlays(g);
             } finally {
                 DrawUtil.sizeDisplay(g.pose(), width, height);
             }

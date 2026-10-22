@@ -18,6 +18,7 @@ import net.phoenixvine.domains.integration.journeymap.DomainJourneyMapPlugin;
 import net.phoenixvine.domains.integration.journeymap.DomainsJourneyMapIntegration;
 import net.phoenixvine.domains.integration.journeymap.JourneyMapEmbeddedClaimScreen;
 import net.phoenixvine.domains.integration.solaris.DomainsSolarisIntegration;
+import net.phoenixvine.domains.integration.xaero.DomainXaeroHighlightRefresh;
 import net.phoenixvine.domains.integration.xaero.DomainXaeroWaypointSync;
 import net.phoenixvine.domains.integration.xaero.DomainsXaeroMinimapIntegration;
 import net.phoenixvine.domains.integration.xaero.DomainsXaeroWorldMapIntegration;
@@ -40,6 +41,7 @@ public class DomainHudOverlay {
     private static boolean xaeroMinimapBroken = false;
 
     private static boolean xaeroEmbedBroken = false;
+    private static boolean xaeroWorldMapRefreshBroken = false;
     private static boolean journeyMapEmbedBroken = false;
 
     @SubscribeEvent
@@ -81,6 +83,16 @@ public class DomainHudOverlay {
                 xaeroMinimapBroken = true;
                 PhoenixDomains.LOGGER.error("Xaero's Minimap is present but its integration failed — claim" +
                         " owner waypoints won't show there for the rest of this session.", t);
+            }
+        }
+
+        if (!xaeroWorldMapRefreshBroken && DomainsXaeroWorldMapIntegration.isAvailable() && cacheChanged) {
+            try {
+                DomainXaeroHighlightRefresh.refresh();
+            } catch (Throwable t) {
+                xaeroWorldMapRefreshBroken = true;
+                PhoenixDomains.LOGGER.error("Xaero's World Map is present but refreshing its claim highlights" +
+                        " failed - claim colours won't update there for the rest of this session.", t);
             }
         }
 
