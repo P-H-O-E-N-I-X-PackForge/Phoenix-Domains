@@ -20,8 +20,8 @@ import net.phoenixvine.wiki.client.screen.WikiTheme;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 import net.phoenixvine.wiki.theme.PhoenixThemeEditorScreen;
 
-import journeymap.client.api.display.Context;
 import journeymap.client.JourneymapClient;
+import journeymap.client.api.display.Context;
 import journeymap.client.io.FileHandler;
 import journeymap.client.model.MapState;
 import journeymap.client.model.MapType;
