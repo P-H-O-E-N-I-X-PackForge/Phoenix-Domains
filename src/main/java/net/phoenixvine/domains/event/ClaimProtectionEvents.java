@@ -88,12 +88,16 @@ public class ClaimProtectionEvents {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (!(event.getTarget() instanceof BlockHitResult hit)) return;
 
-        claimAt(event.getLevel(), hit.getBlockPos()).ifPresent(claim -> {
-            if (!ClaimPermissions.canBuild(player, claim)) {
+        // Scooping acts on the block that was hit, but pouring puts the liquid in the block next to it on the face that
+        // was clicked, so both are checked: a bucket used from outside a claim must not fill a claimed block.
+        for (BlockPos target : new BlockPos[] { hit.getBlockPos(), hit.getBlockPos().relative(hit.getDirection()) }) {
+            var claim = claimAt(event.getLevel(), target);
+            if (claim.isPresent() && !ClaimPermissions.canBuild(player, claim.get())) {
                 event.setCanceled(true);
-                notifyBlocked(player, claim);
+                notifyBlocked(player, claim.get());
+                return;
             }
-        });
+        }
     }
 
     @SubscribeEvent
