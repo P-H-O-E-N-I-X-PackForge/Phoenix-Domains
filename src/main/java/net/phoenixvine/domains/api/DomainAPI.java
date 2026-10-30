@@ -142,7 +142,10 @@ public final class DomainAPI {
     }
 
     public static String claim(ServerPlayer player, ChunkKey key) {
-        if (!isFeatureEnabled(FEATURE_CLAIMING, key.dimension())) return "feature_disabled";
+        if (!isFeatureEnabled(FEATURE_CLAIMING, key.dimension()) ||
+                !DomainGates.allowed(player, DomainGates.CLAIMING, key.dimension())) {
+            return "feature_disabled";
+        }
 
         DomainManager manager = manager(player.getServer());
         if (manager.isClaimed(key)) return "already_claimed";
@@ -191,7 +194,10 @@ public final class DomainAPI {
         if (claim.isChunkloaded() == chunkloaded) return "no_change";
 
         if (chunkloaded) {
-            if (!isFeatureEnabled(FEATURE_CHUNKLOADING, key.dimension())) return "feature_disabled";
+            if (!isFeatureEnabled(FEATURE_CHUNKLOADING, key.dimension()) ||
+                    !DomainGates.allowed(player, DomainGates.CHUNKLOADING, key.dimension())) {
+                return "feature_disabled";
+            }
 
             int maxForceloaded = DomainsConfig.MAX_FORCELOADED_CHUNKS_PER_OWNER.get();
             if (maxForceloaded > 0 && manager.getChunkloadedCountForOwner(claim.getOwner()) >= maxForceloaded) {
@@ -213,7 +219,10 @@ public final class DomainAPI {
     }
 
     public static String setFlag(ServerPlayer player, ChunkKey key, ClaimFlag flag, boolean value) {
-        if (!isFeatureEnabled(FEATURE_CLAIM_FLAGS, key.dimension())) return "feature_disabled";
+        if (!isFeatureEnabled(FEATURE_CLAIM_FLAGS, key.dimension()) ||
+                !DomainGates.allowed(player, DomainGates.CLAIM_FLAGS, key.dimension())) {
+            return "feature_disabled";
+        }
 
         DomainManager manager = manager(player.getServer());
         Optional<Claim> claimOpt = manager.getClaim(key);

@@ -186,7 +186,7 @@ dependencies {
     modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 
 
-   modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.8")
+   modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.6.0")
 
     modCompileOnly 'curse.maven:solaris-map-1622856:9283556'
     modRuntimeOnly 'curse.maven:solaris-map-1622856:9283556'
