@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.phoenixvine.domains.DomainsLang;
 import net.phoenixvine.domains.client.ClientDomainCache;
 import net.phoenixvine.domains.network.C2SDomainActionPacket;
 import net.phoenixvine.domains.network.DomainNetwork;
@@ -225,7 +226,8 @@ public class SolarisClaimMapScreen extends Screen {
         ty = divider(g, tx, ty, x + w - 8);
 
         if (hovered != null) {
-            ty = drawWrapped(g, Component.literal("Chunk " + hovered[0] + ", " + hovered[1]), tx, ty, maxTextW,
+            ty = drawWrapped(g, DomainsLang.tr("domains.solaris_claim_map_screen.chunk", hovered[0], hovered[1]), tx,
+                    ty, maxTextW,
                     SolarisThemeUtils.C_TEXT);
             if (hoveredEntry == null) {
                 ty = drawWrapped(g, Component.translatable("domains.hud.wilderness"), tx, ty, maxTextW,

@@ -33,5 +33,22 @@
   "domains.map.legend_stats": "Claims %s/%s    Chunkloads %s/%s",
   "key.phoenix_domains.map": "Open Claim Map",
   "key.phoenix_domains.toggle_hud": "Toggle Owner HUD",
-  "key.categories.phoenix_domains": "Phoenix Domains"
+  "key.categories.phoenix_domains": "Phoenix Domains",
+  "domains.phoenix_domains_client.open_claim_map": "§fOpen Claim Map",
+  "domains.domain_commands.force_set_chunkload_on_s": "§aForce-set chunkload on §f%s's §achunk to §f%s§a.",
+  "domains.domain_commands.force_unclaimed_s_chunk": "§aForce-unclaimed §f%s's §achunk.",
+  "domains.domain_commands.force_claimed_s_chunk_for": "§aForce-claimed §f%s's §achunk for §f%s§a.",
+  "domains.domain_commands.granted_to": "§aGranted §f%s §a%s to §f%s§a.",
+  "domains.domain_commands.guild_team_not_found": "§cGuild/team '§f%s§c' not found.",
+  "domains.domain_commands.this_chunk_is_unclaimed": "§7This chunk is unclaimed.",
+  "domains.domain_commands.unknown_flag": "§cUnknown flag '§f%s§c'.",
+  "domains.solaris_claim_map_screen.chunk": "Chunk %s, %s",
+  "domains.command.info_header": "§6[Domain] §fOwner: §f%s",
+  "domains.command.info_chunkloaded": "\n§7Chunkloaded: %s",
+  "domains.command.yes": "§aYes",
+  "domains.command.no": "§cNo",
+  "domains.command.info_flag_overrides": "\n§7Flag overrides:",
+  "domains.command.info_flag_entry": "\n  §f%s: %s",
+  "domains.command.on": "§aON",
+  "domains.command.off": "§cOFF"
 }
