@@ -4,10 +4,12 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.phoenixvine.domains.DomainsLang;
 import net.phoenixvine.domains.PhoenixDomains;
 import net.phoenixvine.domains.api.DomainAPI;
 import net.phoenixvine.domains.data.ChunkKey;
@@ -121,7 +123,7 @@ public class DomainCommands {
         ServerPlayer player = source.getPlayerOrException();
         ClaimFlag flag = ClaimFlag.byName(flagName);
         if (flag == null) {
-            source.sendFailure(Component.literal("§cUnknown flag '§f" + flagName + "§c'."));
+            source.sendFailure(DomainsLang.tr("domains.domain_commands.unknown_flag", flagName));
             return 0;
         }
         String result = DomainAPI.setFlag(player, currentChunk(player), flag, value);
@@ -136,21 +138,22 @@ public class DomainCommands {
         Optional<Claim> claimOpt = manager.getClaim(key);
 
         if (claimOpt.isEmpty()) {
-            source.sendSuccess(() -> Component.literal("§7This chunk is unclaimed."), false);
+            source.sendSuccess(() -> DomainsLang.tr("domains.domain_commands.this_chunk_is_unclaimed"), false);
             return 1;
         }
 
         Claim claim = claimOpt.get();
-        StringBuilder sb = new StringBuilder("§6[Domain] §fOwner: §f" + DomainOwnership.displayName(claim.getOwner()));
-        sb.append("\n§7Chunkloaded: ").append(claim.isChunkloaded() ? "§aYes" : "§cNo");
+        MutableComponent msg = DomainsLang.tr("domains.command.info_header",
+                DomainOwnership.displayName(claim.getOwner()));
+        msg.append(DomainsLang.tr("domains.command.info_chunkloaded",
+                claim.isChunkloaded() ? DomainsLang.tr("domains.command.yes") : DomainsLang.tr("domains.command.no")));
         if (!claim.getFlagOverrides().isEmpty()) {
-            sb.append("\n§7Flag overrides:");
+            msg.append(DomainsLang.tr("domains.command.info_flag_overrides"));
             for (Map.Entry<ClaimFlag, Boolean> e : claim.getFlagOverrides().entrySet()) {
-                sb.append("\n  §f").append(e.getKey().label()).append(": ")
-                        .append(e.getValue() ? "§aON" : "§cOFF");
+                msg.append(DomainsLang.tr("domains.command.info_flag_entry", e.getKey().label(),
+                        e.getValue() ? DomainsLang.tr("domains.command.on") : DomainsLang.tr("domains.command.off")));
             }
         }
-        Component msg = Component.literal(sb.toString());
         source.sendSuccess(() -> msg, false);
         return 1;
     }
@@ -164,7 +167,7 @@ public class DomainCommands {
                                         boolean claimPower) {
         Optional<UUID> token = DomainOwnership.tokenByName(source.getServer(), guildName);
         if (token.isEmpty()) {
-            source.sendFailure(Component.literal("§cGuild/team '§f" + guildName + "§c' not found."));
+            source.sendFailure(DomainsLang.tr("domains.domain_commands.guild_team_not_found", guildName));
             return 0;
         }
         return grantToken(source, token.get(), amount, claimPower);
@@ -175,8 +178,8 @@ public class DomainCommands {
         else DomainAPI.grantChunkloadPower(token, amount);
         String kind = claimPower ? "claim power" : "chunkload power";
         source.sendSuccess(
-                () -> Component.literal(
-                        "§aGranted §f" + amount + " §a" + kind + " to §f" + DomainOwnership.displayName(token) + "§a."),
+                () -> DomainsLang.tr("domains.domain_commands.granted_to", amount, kind,
+                        DomainOwnership.displayName(token)),
                 true);
         return 1;
     }
@@ -184,25 +187,25 @@ public class DomainCommands {
     private static int adminClaim(CommandSourceStack source, ServerPlayer target, ServerPlayer owner) {
         UUID token = DomainOwnership.tokenFor(owner.getUUID());
         DomainAPI.adminSetClaim(source.getServer(), currentChunk(target), token);
-        source.sendSuccess(() -> Component.literal(
-                "§aForce-claimed §f" + target.getGameProfile().getName() + "'s §achunk for §f" +
-                        DomainOwnership.displayName(token) + "§a."),
+        source.sendSuccess(
+                () -> DomainsLang.tr("domains.domain_commands.force_claimed_s_chunk_for",
+                        target.getGameProfile().getName(), DomainOwnership.displayName(token)),
                 true);
         return 1;
     }
 
     private static int adminUnclaim(CommandSourceStack source, ServerPlayer target) {
         DomainAPI.adminRemoveClaim(source.getServer(), currentChunk(target));
-        source.sendSuccess(() -> Component.literal(
-                "§aForce-unclaimed §f" + target.getGameProfile().getName() + "'s §achunk."), true);
+        source.sendSuccess(() -> DomainsLang.tr("domains.domain_commands.force_unclaimed_s_chunk",
+                target.getGameProfile().getName()), true);
         return 1;
     }
 
     private static int adminChunkload(CommandSourceStack source, ServerPlayer target, boolean value) {
         DomainAPI.adminSetChunkloaded(source.getServer(), currentChunk(target), value);
-        source.sendSuccess(() -> Component.literal(
-                "§aForce-set chunkload on §f" + target.getGameProfile().getName() + "'s §achunk to §f" + value +
-                        "§a."),
+        source.sendSuccess(
+                () -> DomainsLang.tr("domains.domain_commands.force_set_chunkload_on_s",
+                        target.getGameProfile().getName(), value),
                 true);
         return 1;
     }
