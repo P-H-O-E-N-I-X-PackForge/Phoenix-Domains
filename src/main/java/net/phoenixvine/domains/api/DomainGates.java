@@ -4,11 +4,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.phoenixvine.wiki.api.gate.SuiteGates;
 
-/**
- * What a player may do with Domains, as features of the shared gate API ({@link SuiteGates}): another mod binds them to
- * research or anything else, e.g. {@code SuiteGates.bind(DomainGates.CHUNKLOADING, "*", "conflux:node/foo")}. A feature
- * that nothing is bound to is allowed, so a pack that binds nothing sees no change. The scope is the dimension id.
- */
 public final class DomainGates {
 
     public static final String CLAIMING = "domains:" + DomainAPI.FEATURE_CLAIMING;

@@ -36,8 +36,6 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
     @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
-    // JourneyMap 6's zoom is not a small level: it is pixels per 512 blocks (so 512 is one pixel per block) and its
-    // own clamp is 2 to 16384. Small numbers make its pixel-to-block maths divide by nearly nothing.
     private static final int MIN_ZOOM = 64;
     private static final int MAX_ZOOM = 8192;
     private static final int DEFAULT_ZOOM = 1024;
@@ -94,8 +92,6 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        // JourneyMap's renderer draws nothing until it has a MapState (it reads the map type from it every frame),
-        // so set one up the way JourneyMap's own fullscreen map does
         mapState = new MapState();
         mapState.refresh(mc, mc.player, JourneymapClient.getInstance().getFullMapProperties());
         mapType = mapState.setMapType(MapType.day(mc.player.level().dimension()));
@@ -119,14 +115,9 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
 
     private int frames;
 
-    /**
-     * Draws what JourneyMap draws over the tiles: the claim polygons the Domains plugin shows through its API are in
-     * the map state's draw steps, not in the tiles.
-     */
     private void drawOverlays(GuiGraphics g) {
         try {
-            // JourneyMap keeps the overlay draw steps it prepared for the current view; a claim that was added or
-            // removed has to make it prepare them again
+
             if (ClientDomainCache.version != lastClaimVersion) {
                 lastClaimVersion = ClientDomainCache.version;
                 DomainJourneyMapPlugin.sync();
@@ -149,10 +140,6 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
     private boolean loggedOverlayFailure;
     private int lastClaimVersion = -1;
 
-    /**
-     * JourneyMap's renderer works in window pixels, while the screen and the mouse are in gui-scaled units, so a
-     * mouse position has to be scaled up before it is asked which block it is over.
-     */
     private Point2D.Double pixel(double guiX, double guiY) {
         double scale = minecraft.getWindow().getScreenWidth() / (double) Math.max(1, width);
         return new Point2D.Double(guiX * scale, guiY * scale);
@@ -187,14 +174,11 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         renderBackground(g, mx, my, partialTick);
         if (gridRenderer != null && mapType != null) {
 
-            // JourneyMap lays the map out in window pixels (as its own fullscreen map does), so the projection has
-            // to be window-sized while it draws, and gui-sized again afterwards
             g.flush();
             DrawUtil.sizeDisplay(minecraft.getWindow().getScreenWidth(), minecraft.getWindow().getScreenHeight());
             try {
                 gridRenderer.setContext(mapState);
-                // the first centre ran before the renderer had measured the window and the grid was not built, so
-                // keep centring for a few frames until it is
+
                 if (frames < 8) recenter();
                 gridRenderer.clearGlErrors(false);
                 gridRenderer.updateRotation(g, 0.0);
@@ -426,7 +410,7 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         int newZoom = (int) Math.round(Math.max(MIN_ZOOM,
                 Math.min(MAX_ZOOM, zoom * (delta > 0 ? ZOOM_STEP : 1.0 / ZOOM_STEP))));
         if (newZoom != zoom && gridRenderer != null) {
-            // zoom toward the cursor: keep the block under it where it is
+
             Point2D.Double cursor = pixel(mx, my);
             BlockPos before = gridRenderer.getBlockAtPixel(cursor);
             zoom = newZoom;
