@@ -10,7 +10,7 @@
   "domains.result.too_far": "You're too far from that chunk to claim it.",
   "domains.result.too_many_claims": "You've reached your claimed chunk limit.",
   "domains.result.too_many_forceloaded": "You've reached your forceloaded chunk limit.",
-  "domains.protection.blocked": "You can't do that here — this land belongs to %s",
+  "domains.protection.blocked": "You can't do that here. This land belongs to %s",
   "domains.hud.wilderness": "Wilderness",
   "domains.hud.owner": "%s's land",
   "domains.map.title": "Claim Map",

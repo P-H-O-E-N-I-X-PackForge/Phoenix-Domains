@@ -114,11 +114,6 @@ public class JourneyMapEmbeddedClaimScreen extends Screen {
         return gridSize;
     }
 
-    /**
-     * Draws what JourneyMap draws over the tiles: the claim polygons the Domains plugin shows through its API are in
-     * the map state's draw steps, not in the tiles. They also have to be prepared again when a claim is added or
-     * removed.
-     */
     private void drawOverlays(GuiGraphics g) {
         try {
             if (ClientDomainCache.version != lastClaimVersion) {
