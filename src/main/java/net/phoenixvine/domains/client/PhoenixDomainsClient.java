@@ -18,7 +18,6 @@ public class PhoenixDomainsClient {
     }
 
     private static void clientSetup(final FMLClientSetupEvent event) {
-
         PhoenixTheme.registerMod("net.phoenixvine.domains", PhoenixDomains.MOD_ID);
 
         SuiteHudBar.register(PhoenixDomains.MOD_ID, SuiteHudBar.PRIORITY_DOMAINS,

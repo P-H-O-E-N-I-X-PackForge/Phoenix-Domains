@@ -35,7 +35,6 @@ final class FtbTeamsBackend implements OwnershipBackend {
 
     @Override
     public boolean isAllied(ServerPlayer player, UUID ownerToken) {
-        
         return false;
     }
 

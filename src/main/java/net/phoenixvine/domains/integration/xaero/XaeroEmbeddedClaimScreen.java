@@ -142,7 +142,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             itemRendererField.set(guiMap, mc.getItemRenderer());
             screenWidthField.set(guiMap, this.width);
             screenHeightField.set(guiMap, this.height);
-            
+
             if (mc.player != null) {
                 cameraXField.set(guiMap, mc.player.getX());
                 cameraZField.set(guiMap, mc.player.getZ());
@@ -356,7 +356,7 @@ public class XaeroEmbeddedClaimScreen extends Screen {
             double factor = delta > 0 ? ZOOM_STEP : 1.0 / ZOOM_STEP;
             double clamped = Math.max(MIN_USER_SCALE, Math.min(MAX_USER_SCALE, userScale * factor));
             userScaleField.set(guiMap, clamped);
-            
+
             destScaleField.set(null, clamped);
         } catch (ReflectiveOperationException ignored) {
 

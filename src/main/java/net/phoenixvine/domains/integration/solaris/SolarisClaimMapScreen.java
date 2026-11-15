@@ -187,7 +187,6 @@ public class SolarisClaimMapScreen extends Screen {
     }
 
     private void highlightChunk(GuiGraphics g, int cx, int cz, int outlineColor) {
-
         int x0 = (int) Math.round(viewport.toScreenX(cx << 4, 0));
         int y0 = (int) Math.round(viewport.toScreenY(cz << 4, 0));
         int x1 = (int) Math.round(viewport.toScreenX((cx + 1) << 4, 0));
