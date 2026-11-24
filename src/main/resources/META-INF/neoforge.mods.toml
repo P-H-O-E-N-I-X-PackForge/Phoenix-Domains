@@ -11,7 +11,7 @@ displayURL = "${mod_url}"
 authors = "${mod_author}"
 description = '''
 Phoenix Domains - chunk claiming and land protection for guilds/teams and solo players. Requires
-either Phoenix Guilds or FTB Teams for group ownership.
+either Phoenix Guilds or FTB Teams for group ownership. The client also needs at least one map mod to show claims on: Solaris, JourneyMap, Xaero's Minimap or Xaero's World Map (any one is enough).
 '''
 
 [[dependencies.${mod_id}]]
