@@ -26,8 +26,25 @@ public class PhoenixDomains {
     public static final String MOD_ID = "phoenix_domains";
     public static final Logger LOGGER = LogManager.getLogger();
 
+    /** Domains shows claims on a map, so a client needs at least one of these. Any one of them is enough. */
+    public static final java.util.List<String> MAP_MODS = java.util.List.of("solaris", "journeymap", "xaerominimap",
+            "xaeroworldmap");
+
+    private static boolean hasMapMod() {
+        net.minecraftforge.fml.ModList mods = net.minecraftforge.fml.ModList.get();
+        for (String id : MAP_MODS) if (mods.isLoaded(id)) return true;
+        return false;
+    }
+
     public PhoenixDomains() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+        // The map mods are client mods (JourneyMap and Xaero's), so a dedicated server is not asked for one.
+        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == Dist.CLIENT && !hasMapMod()) {
+            throw new IllegalStateException(
+                    "Phoenix Domains needs a map mod to show claims on. Install at least one of: " +
+                            "Solaris, JourneyMap, Xaero's Minimap or Xaero's World Map (any one is enough).");
+        }
 
         DomainsConfig.register();
         DomainsClientConfig.register();
